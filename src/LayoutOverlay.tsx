@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
@@ -39,6 +39,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         startInEditMode,
         newXAttr,
         movedXAttr,
+        allowZoom,
+        minZoom,
+        maxZoom,
+        initialZoom,
+        markerScaling,
+        viewportHeight,
         hoverTitle,
         hoverLines,
         hoverDelay,
@@ -58,6 +64,67 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
+    const viewportRef = useRef<HTMLDivElement>(null);
+    const zMin = Math.max(10, minZoom) / 100;
+    const zMax = Math.max(zMin, maxZoom / 100);
+    const [zoom, setZoomState] = useState(() => Math.min(zMax, Math.max(zMin, (initialZoom || 100) / 100)));
+    const zoomRef = useRef(zoom);
+    const anchorRef = useRef<{ fx: number; fy: number; px: number; py: number } | null>(null);
+    const panRef = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+    const [panning, setPanning] = useState(false);
+    const markerScale = markerScaling === "fixed" ? 1 : markerScaling === "proportional" ? zoom : Math.sqrt(zoom);
+
+    // Zoom keeping the point (px, py) of the viewport fixed.
+    const zoomTo = useCallback(
+        (next: number, px?: number, py?: number) => {
+            const vp = viewportRef.current;
+            const cv = canvasRef.current;
+            const z = Math.min(zMax, Math.max(zMin, next));
+            if (!vp || !cv || z === zoomRef.current) {
+                return;
+            }
+            const ax = px ?? vp.clientWidth / 2;
+            const ay = py ?? vp.clientHeight / 2;
+            anchorRef.current = {
+                fx: (vp.scrollLeft + ax) / cv.offsetWidth,
+                fy: (vp.scrollTop + ay) / cv.offsetHeight,
+                px: ax,
+                py: ay
+            };
+            zoomRef.current = z;
+            setZoomState(z);
+        },
+        [zMin, zMax]
+    );
+
+    useLayoutEffect(() => {
+        const a = anchorRef.current;
+        const vp = viewportRef.current;
+        const cv = canvasRef.current;
+        if (a && vp && cv) {
+            vp.scrollLeft = a.fx * cv.offsetWidth - a.px;
+            vp.scrollTop = a.fy * cv.offsetHeight - a.py;
+        }
+        anchorRef.current = null;
+    }, [zoom]);
+
+    useEffect(() => {
+        const vp = viewportRef.current;
+        if (!vp || !allowZoom) {
+            return undefined;
+        }
+        const onWheel = (e: WheelEvent): void => {
+            if (!(e.ctrlKey || e.metaKey)) {
+                return;
+            }
+            e.preventDefault();
+            const rect = vp.getBoundingClientRect();
+            zoomTo(zoomRef.current * Math.exp(-e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+        };
+        vp.addEventListener("wheel", onWheel, { passive: false });
+        return () => vp.removeEventListener("wheel", onWheel);
+    }, [allowZoom, zoomTo]);
+
     const rootRef = useRef<HTMLDivElement>(null);
     const hoverTimer = useRef<number | undefined>(undefined);
     const [hover, setHover] = useState<{ id: string; left: number; top: number; below: boolean } | null>(null);
@@ -213,8 +280,31 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
     };
 
+    const onCanvasPointerMove = (e: React.PointerEvent): void => {
+        const pan = panRef.current;
+        const vp = viewportRef.current;
+        if (pan && vp) {
+            vp.scrollLeft = pan.sl - (e.clientX - pan.x);
+            vp.scrollTop = pan.st - (e.clientY - pan.y);
+        }
+    };
+
+    const endPan = (): void => {
+        panRef.current = null;
+        setPanning(false);
+    };
+
     const onCanvasPointerDown = (e: React.PointerEvent): void => {
         setSelectedId(null);
+        if (!editing && allowZoom && e.target === e.currentTarget && viewportRef.current && e.button === 0) {
+            const vp = viewportRef.current;
+            if (vp.scrollWidth > vp.clientWidth || vp.scrollHeight > vp.clientHeight) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                panRef.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
+                setPanning(true);
+            }
+            return;
+        }
         if (!editing || e.target !== e.currentTarget) {
             return;
         }
@@ -249,15 +339,46 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {allowEditing && (
+            {(allowEditing || allowZoom) && (
                 <div className="layout-overlay__toolbar">
-                    <button
-                        type="button"
-                        className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
-                        onClick={() => setEditMode(m => !m)}
-                    >
-                        {editMode ? "Editing" : "Edit"}
-                    </button>
+                    {allowEditing && (
+                        <button
+                            type="button"
+                            className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
+                            onClick={() => setEditMode(m => !m)}
+                        >
+                            {editMode ? "Editing" : "Edit"}
+                        </button>
+                    )}
+                    {allowZoom && (
+                        <span className="layout-overlay__zoom">
+                            <button
+                                type="button"
+                                className="layout-overlay__btn"
+                                title="Zoom out"
+                                onClick={() => zoomTo(zoomRef.current / 1.25)}
+                            >
+                                −
+                            </button>
+                            <span className="layout-overlay__zoom-label">{Math.round(zoom * 100)}%</span>
+                            <button
+                                type="button"
+                                className="layout-overlay__btn"
+                                title="Zoom in"
+                                onClick={() => zoomTo(zoomRef.current * 1.25)}
+                            >
+                                +
+                            </button>
+                            <button
+                                type="button"
+                                className="layout-overlay__btn"
+                                title="Fit to width"
+                                onClick={() => zoomTo(1)}
+                            >
+                                Fit
+                            </button>
+                        </span>
+                    )}
                     {editing && <span>Drag markers · arrow keys nudge · click empty space to add</span>}
                 </div>
             )}
@@ -277,73 +398,91 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 </div>
             )}
             <div
-                ref={canvasRef}
-                className={`layout-overlay__canvas ${editing ? "layout-overlay__canvas--edit" : ""}`}
-                style={{ aspectRatio: `${w} / ${h}`, backgroundImage: bgUrl ? `url("${bgUrl}")` : undefined }}
-                onPointerDown={onCanvasPointerDown}
+                ref={viewportRef}
+                className="layout-overlay__viewport"
+                style={{ maxHeight: viewportHeight > 0 ? viewportHeight : "80vh" }}
+                onScroll={hideHover}
             >
-                {showGrid && (
-                    <div
-                        className="layout-overlay__grid"
-                        style={{
-                            backgroundSize: `${snapSize > 0 ? (snapSize / maxX) * 100 : 10}% ${
-                                snapSize > 0 ? (snapSize / maxY) * 100 : (10 * w) / h
-                            }%`
-                        }}
-                    />
-                )}
-                {items.map(item => {
-                    const isDrag = drag?.id === item.id;
-                    const x = isDrag ? drag.x : num(xAttr.get(item).value);
-                    const y = isDrag ? drag.y : num(yAttr.get(item).value);
-                    const size = num(sizeAttr?.get(item).value, defaultSize) || defaultSize;
-                    const color = colorAttr?.get(item).value || defaultColor;
-                    const label = labelAttr?.get(item).value;
-                    const cls = [
-                        "layout-overlay__marker",
-                        editing ? "layout-overlay__marker--edit" : "",
-                        isDrag ? "layout-overlay__marker--drag" : "",
-                        selectedId === item.id ? "layout-overlay__marker--selected" : ""
-                    ].join(" ");
-                    return (
+                <div
+                    ref={canvasRef}
+                    className={`layout-overlay__canvas ${editing ? "layout-overlay__canvas--edit" : ""} ${
+                        panning ? "layout-overlay__canvas--pan" : ""
+                    }`}
+                    style={{
+                        width: `${zoom * 100}%`,
+                        aspectRatio: `${w} / ${h}`,
+                        backgroundImage: bgUrl ? `url("${bgUrl}")` : undefined
+                    }}
+                    onPointerDown={onCanvasPointerDown}
+                    onPointerMove={onCanvasPointerMove}
+                    onPointerUp={endPan}
+                    onPointerCancel={endPan}
+                >
+                    {showGrid && (
                         <div
-                            key={item.id}
-                            className={cls}
-                            role="button"
-                            tabIndex={0}
-                            title={
-                                hoverTitle || hoverLines.length > 0 ? undefined : tooltipAttr?.get(item).value ?? label
-                            }
-                            style={{ left: `${toFracX(x) * 100}%`, top: `${toFracY(y) * 100}%` }}
-                            onPointerEnter={e => showHover(e, item.id)}
-                            onPointerLeave={hideHover}
-                            onFocus={e => showHover(e, item.id)}
-                            onBlur={hideHover}
-                            onPointerDown={e => {
-                                hideHover();
-                                onMarkerPointerDown(e, item);
+                            className="layout-overlay__grid"
+                            style={{
+                                backgroundSize: `${snapSize > 0 ? (snapSize / maxX) * 100 : 10}% ${
+                                    snapSize > 0 ? (snapSize / maxY) * 100 : (10 * w) / h
+                                }%`
                             }}
-                            onPointerMove={onMarkerPointerMove}
-                            onPointerUp={e => onMarkerPointerUp(e, item)}
-                            onDoubleClick={() => run(onMarkerDoubleClick?.get(item))}
-                            onContextMenu={e => {
-                                if (onMarkerContextMenu?.get(item).canExecute) {
-                                    e.preventDefault();
-                                    run(onMarkerContextMenu.get(item));
+                        />
+                    )}
+                    {items.map(item => {
+                        const isDrag = drag?.id === item.id;
+                        const x = isDrag ? drag.x : num(xAttr.get(item).value);
+                        const y = isDrag ? drag.y : num(yAttr.get(item).value);
+                        const size = (num(sizeAttr?.get(item).value, defaultSize) || defaultSize) * markerScale;
+                        const color = colorAttr?.get(item).value || defaultColor;
+                        const label = labelAttr?.get(item).value;
+                        const cls = [
+                            "layout-overlay__marker",
+                            editing ? "layout-overlay__marker--edit" : "",
+                            isDrag ? "layout-overlay__marker--drag" : "",
+                            selectedId === item.id ? "layout-overlay__marker--selected" : ""
+                        ].join(" ");
+                        return (
+                            <div
+                                key={item.id}
+                                className={cls}
+                                role="button"
+                                tabIndex={0}
+                                title={
+                                    hoverTitle || hoverLines.length > 0
+                                        ? undefined
+                                        : tooltipAttr?.get(item).value ?? label
                                 }
-                            }}
-                            onKeyDown={e => onMarkerKeyDown(e, item)}
-                        >
-                            <Shape
-                                shape={parseShape(shapeAttr?.get(item).value)}
-                                color={color}
-                                size={size}
-                                rotation={num(rotationAttr?.get(item).value)}
-                            />
-                            {label && <span className="layout-overlay__label">{label}</span>}
-                        </div>
-                    );
-                })}
+                                style={{ left: `${toFracX(x) * 100}%`, top: `${toFracY(y) * 100}%` }}
+                                onPointerEnter={e => showHover(e, item.id)}
+                                onPointerLeave={hideHover}
+                                onFocus={e => showHover(e, item.id)}
+                                onBlur={hideHover}
+                                onPointerDown={e => {
+                                    hideHover();
+                                    onMarkerPointerDown(e, item);
+                                }}
+                                onPointerMove={onMarkerPointerMove}
+                                onPointerUp={e => onMarkerPointerUp(e, item)}
+                                onDoubleClick={() => run(onMarkerDoubleClick?.get(item))}
+                                onContextMenu={e => {
+                                    if (onMarkerContextMenu?.get(item).canExecute) {
+                                        e.preventDefault();
+                                        run(onMarkerContextMenu.get(item));
+                                    }
+                                }}
+                                onKeyDown={e => onMarkerKeyDown(e, item)}
+                            >
+                                <Shape
+                                    shape={parseShape(shapeAttr?.get(item).value)}
+                                    color={color}
+                                    size={size}
+                                    rotation={num(rotationAttr?.get(item).value)}
+                                />
+                                {label && <span className="layout-overlay__label">{label}</span>}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
             {hover && hoverItem && (
                 <div

@@ -2,7 +2,7 @@
 .layout-overlay__toolbar { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px; flex-wrap: wrap; }
 .layout-overlay__btn { border: 1px solid #bbb; background: #fff; border-radius: 4px; padding: 3px 10px; cursor: pointer; }
 .layout-overlay__btn--on { background: #1976d2; color: #fff; border-color: #1976d2; }
-.layout-overlay__canvas { position: relative; width: 100%; overflow: hidden; border: 1px solid #ccc; background: #fafafa center / 100% 100% no-repeat; touch-action: none; user-select: none; }
+.layout-overlay__canvas { position: relative; width: 100%; overflow: hidden; flex: none; border: 1px solid #ccc; background: #fafafa center / 100% 100% no-repeat; touch-action: none; user-select: none; }
 .layout-overlay__canvas--edit { cursor: crosshair; outline: 2px dashed #1976d2; outline-offset: -2px; }
 .layout-overlay__grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(0,0,0,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,.08) 1px, transparent 1px); }
 .layout-overlay__marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; outline: none; }
@@ -21,3 +21,8 @@
 .layout-overlay__card { position: absolute; z-index: 20; transform: translate(-50%, -100%); max-width: 260px; padding: 6px 10px; border-radius: 4px; background: #222; color: #fff; font-size: 12px; line-height: 1.35; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.35); text-align: center; white-space: nowrap; }
 .layout-overlay__card--below { transform: translate(-50%, 0); }
 .layout-overlay__card-title, .layout-overlay__card-bold { font-weight: 700; }
+.layout-overlay__viewport { width: 100%; overflow: auto; border: 1px solid #ccc; background: #fff; overscroll-behavior: contain; }
+.layout-overlay__viewport .layout-overlay__canvas { border: 0; }
+.layout-overlay__canvas--pan { cursor: grabbing; }
+.layout-overlay__zoom { display: inline-flex; align-items: center; gap: 4px; }
+.layout-overlay__zoom-label { min-width: 42px; text-align: center; }

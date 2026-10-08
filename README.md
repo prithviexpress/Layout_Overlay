@@ -29,6 +29,12 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
 - **Legend → Legend items:** caption, color and shape per entry, shown above the canvas.
 
+## Zoom and scroll
+- **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac); toolbar has − / + / Fit.
+- Scroll and **Shift + scroll** pan; dragging empty space pans when not editing.
+- **Marker scaling:** Fixed (pixel size), Smooth (grows with the square root of zoom, default) or Proportional (scales exactly with the plan).
+- Properties: min / max / initial zoom %, max viewport height (0 = 80% of window).
+
 ## Editing
 Toggle **Edit**: drag markers, arrow keys nudge (Shift = x10), inspector changes X/Y/shape/color/size/label. Optional grid + snap.
 

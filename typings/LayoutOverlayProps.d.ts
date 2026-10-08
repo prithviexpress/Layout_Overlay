@@ -18,6 +18,8 @@ import { CSSProperties } from "react";
 
 export type CoordModeEnum = "percent" | "pixels";
 
+export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
+
 export interface HoverLinesType {
     text: ListExpressionValue<string>;
     bold: boolean;
@@ -61,6 +63,12 @@ export interface LayoutOverlayContainerProps {
     canvasHeight: number;
     defaultSize: number;
     defaultColor: string;
+    allowZoom: boolean;
+    minZoom: number;
+    maxZoom: number;
+    initialZoom: number;
+    markerScaling: MarkerScalingEnum;
+    viewportHeight: number;
     showGrid: boolean;
     snapSize: number;
     allowEditing: boolean;
@@ -107,6 +115,12 @@ export interface LayoutOverlayPreviewProps {
     canvasHeight: number | null;
     defaultSize: number | null;
     defaultColor: string;
+    allowZoom: boolean;
+    minZoom: number | null;
+    maxZoom: number | null;
+    initialZoom: number | null;
+    markerScaling: MarkerScalingEnum;
+    viewportHeight: number | null;
     showGrid: boolean;
     snapSize: number | null;
     allowEditing: boolean;

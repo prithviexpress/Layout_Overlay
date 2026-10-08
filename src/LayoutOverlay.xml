@@ -136,6 +136,41 @@
                 <description>CSS color used when no Color attribute value is available.</description>
             </property>
 
+            <property key="allowZoom" type="boolean" defaultValue="true">
+                <caption>Allow zoom and scroll</caption>
+                <description>Ctrl + mouse wheel zooms in and out around the cursor. Scroll and Shift + scroll pan; dragging empty space pans when not editing. Adds zoom buttons.</description>
+            </property>
+
+            <property key="minZoom" type="integer" defaultValue="50">
+                <caption>Minimum zoom (%)</caption>
+                <description>100 = canvas fits the widget width.</description>
+            </property>
+
+            <property key="maxZoom" type="integer" defaultValue="800">
+                <caption>Maximum zoom (%)</caption>
+                <description>Upper zoom limit.</description>
+            </property>
+
+            <property key="initialZoom" type="integer" defaultValue="100">
+                <caption>Initial zoom (%)</caption>
+                <description>Zoom level when the widget loads. Use e.g. 300 for a very wide plan.</description>
+            </property>
+
+            <property key="markerScaling" type="enumeration" defaultValue="smooth">
+                <caption>Marker scaling</caption>
+                <description>How marker size follows zoom. Fixed keeps pixel size; Smooth grows with the square root of the zoom; Proportional scales exactly with the plan.</description>
+                <enumerationValues>
+                    <enumerationValue key="fixed">Fixed size</enumerationValue>
+                    <enumerationValue key="smooth">Smooth (square root)</enumerationValue>
+                    <enumerationValue key="proportional">Proportional</enumerationValue>
+                </enumerationValues>
+            </property>
+
+            <property key="viewportHeight" type="integer" defaultValue="0">
+                <caption>Max viewport height (px)</caption>
+                <description>Caps the widget height; content scrolls vertically inside it when zoomed. 0 = 80% of the window height.</description>
+            </property>
+
             <property key="showGrid" type="boolean" defaultValue="false">
                 <caption>Show grid</caption>
                 <description>Draw a background grid to help positioning.</description>
