@@ -44,6 +44,7 @@ interface MarqueeState {
     additive: boolean;
 }
 
+const SHAPE_FROM_ENUM: Record<string, string> = { thumbsUp: "thumbs-up", thumbsDown: "thumbs-down" };
 const num = (v: Big | undefined | null, fallback = 0): number => (v ? Number(v.toString()) : fallback);
 const DRAG_THRESHOLD_PX = 3;
 const nowMs = (): number => Date.now();
@@ -75,6 +76,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         canvasWidth,
         canvasHeight,
         defaultSize,
+        defaultShape,
+        shapeExpr,
+        sizeExpr,
         defaultColor,
         labelMinZoom,
         showGrid,
@@ -853,8 +857,17 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     {items.map(item => {
                         const isDrag = !!drag?.moved && drag.ids.includes(item.id);
                         const { x, y } = displayPos(item);
-                        const size = (num(sizeAttr?.get(item).value, defaultSize) || defaultSize) * markerScale;
-                        const shapeDef = parseShape(shapeAttr?.get(item).value);
+                        // Precedence: attribute, then expression, then the value typed in Studio Pro.
+                        const attrSize = num(sizeAttr?.get(item).value);
+                        const exprSize = num(sizeExpr?.get(item).value);
+                        const size =
+                            (attrSize > 0 ? attrSize : exprSize > 0 ? exprSize : defaultSize || 28) * markerScale;
+                        const shapeDef = parseShape(
+                            shapeAttr?.get(item).value ||
+                                shapeExpr?.get(item).value ||
+                                SHAPE_FROM_ENUM[defaultShape] ||
+                                defaultShape
+                        );
                         // Occupancy wins over Fill: occupied = solid line, not occupied = dotted line.
                         const occupancy = occupancyAttr ? parseOccupancy(occupancyAttr.get(item).value) : undefined;
                         const filled =

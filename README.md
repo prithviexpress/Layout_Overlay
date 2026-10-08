@@ -5,6 +5,11 @@ Draw clickable, draggable, editable **shape markers** at X/Y coordinates over a 
 ## Data model
 A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes: `Shape`, `Color`, `Size`, `Rotation`, `Label`, `Tooltip`.
 
+## Shape and size sources
+Both are resolved per marker in this order, so you can type a value, drive it from data, or compute it:
+- **Shape:** *Shape attribute* → *Shape (expression)* → *Default shape* (a dropdown in the widget settings: truck, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs up / down).
+- **Size (px):** *Size attribute* → *Size (expression)* → *Default marker size* (typed manually). Expressions can use page variables and the marker's attributes. Zero, negative or empty values fall through to the next source.
+
 ## Shapes
 `Shape` attribute value:
 - built-in name: `truck circle square triangle diamond star hexagon pin cross check warning thumbs-up thumbs-down`

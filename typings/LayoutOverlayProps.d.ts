@@ -18,6 +18,21 @@ import { CSSProperties } from "react";
 
 export type CoordModeEnum = "percent" | "pixels";
 
+export type DefaultShapeEnum =
+    | "circle"
+    | "square"
+    | "triangle"
+    | "diamond"
+    | "star"
+    | "hexagon"
+    | "pin"
+    | "cross"
+    | "check"
+    | "warning"
+    | "thumbsUp"
+    | "thumbsDown"
+    | "truck";
+
 export type DefaultFillEnum = "filled" | "outline";
 
 export type OccupiedStyleEnum = "outline" | "filled";
@@ -64,8 +79,10 @@ export interface LayoutOverlayContainerProps {
     integerCoords: boolean;
     yAttr: ListAttributeValue<Big>;
     shapeAttr?: ListAttributeValue<string>;
+    shapeExpr?: ListExpressionValue<string>;
     colorAttr?: ListAttributeValue<string>;
     sizeAttr?: ListAttributeValue<Big>;
+    sizeExpr?: ListExpressionValue<Big>;
     rotationAttr?: ListAttributeValue<Big>;
     labelAttr?: ListAttributeValue<string>;
     orientationAttr?: ListAttributeValue<string | Big>;
@@ -83,6 +100,7 @@ export interface LayoutOverlayContainerProps {
     canvasWidth: number;
     canvasHeight: number;
     defaultSize: number;
+    defaultShape: DefaultShapeEnum;
     defaultFill: DefaultFillEnum;
     occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;
@@ -132,8 +150,10 @@ export interface LayoutOverlayPreviewProps {
     integerCoords: boolean;
     yAttr: string;
     shapeAttr: string;
+    shapeExpr: string;
     colorAttr: string;
     sizeAttr: string;
+    sizeExpr: string;
     rotationAttr: string;
     labelAttr: string;
     orientationAttr: string;
@@ -151,6 +171,7 @@ export interface LayoutOverlayPreviewProps {
     canvasWidth: number | null;
     canvasHeight: number | null;
     defaultSize: number | null;
+    defaultShape: DefaultShapeEnum;
     defaultFill: DefaultFillEnum;
     occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;

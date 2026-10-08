@@ -55,6 +55,12 @@
                 </attributeTypes>
             </property>
 
+            <property key="shapeExpr" type="expression" dataSource="markers" required="false">
+                <caption>Shape (expression)</caption>
+                <description>Alternative to the Shape attribute: an expression returning a shape name per marker, e.g. if $currentObject/Occupied then 'truck' else 'circle'. Can use page variables. Used when the Shape attribute is empty or not set.</description>
+                <returnType type="String" />
+            </property>
+
             <property key="colorAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Color</caption>
                 <description>CSS color (e.g. "#2e7d32").</description>
@@ -65,11 +71,17 @@
 
             <property key="sizeAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Size (px)</caption>
-                <description>Marker size in pixels. Falls back to default size.</description>
+                <description>Marker size in pixels, read from an attribute per marker. Order of precedence: this attribute, then Size (expression), then Default marker size.</description>
                 <attributeTypes>
                     <attributeType name="Decimal" />
                     <attributeType name="Integer" />
                 </attributeTypes>
+            </property>
+
+            <property key="sizeExpr" type="expression" dataSource="markers" required="false">
+                <caption>Size (expression, px)</caption>
+                <description>Alternative to the Size attribute: an expression returning the size in px per marker, e.g. a page variable or if $currentObject/Priority = 1 then 40 else 28. Used when the Size attribute is empty or not set.</description>
+                <returnType type="Decimal" />
             </property>
 
             <property key="rotationAttr" type="attribute" dataSource="markers" required="false">
@@ -210,6 +222,26 @@
             <property key="defaultSize" type="integer" defaultValue="28">
                 <caption>Default marker size (px)</caption>
                 <description>Marker size in pixels when no Size attribute value is available.</description>
+            </property>
+
+            <property key="defaultShape" type="enumeration" defaultValue="circle">
+                <caption>Default shape</caption>
+                <description>Shape used for markers that have no value in the Shape attribute or Shape expression. Pick the shape directly here when all markers look the same. For a custom vector or image use the Shape attribute ("svg:..." / "url:...").</description>
+                <enumerationValues>
+                    <enumerationValue key="circle">Circle</enumerationValue>
+                    <enumerationValue key="square">Square</enumerationValue>
+                    <enumerationValue key="triangle">Triangle</enumerationValue>
+                    <enumerationValue key="diamond">Diamond</enumerationValue>
+                    <enumerationValue key="star">Star</enumerationValue>
+                    <enumerationValue key="hexagon">Hexagon</enumerationValue>
+                    <enumerationValue key="pin">Pin</enumerationValue>
+                    <enumerationValue key="cross">Cross</enumerationValue>
+                    <enumerationValue key="check">Check</enumerationValue>
+                    <enumerationValue key="warning">Warning</enumerationValue>
+                    <enumerationValue key="thumbsUp">Thumbs up</enumerationValue>
+                    <enumerationValue key="thumbsDown">Thumbs down</enumerationValue>
+                    <enumerationValue key="truck">Truck (top view)</enumerationValue>
+                </enumerationValues>
             </property>
 
             <property key="defaultFill" type="enumeration" defaultValue="filled">
