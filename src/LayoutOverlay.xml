@@ -48,7 +48,7 @@
 
             <property key="shapeAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Shape</caption>
-                <description>Built-in: truck, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
+                <description>Built-in: truck (top view), circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
                 <attributeTypes>
                     <attributeType name="String" />
                     <attributeType name="Enum" />
@@ -91,7 +91,7 @@
 
             <property key="orientationAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Orientation</caption>
-                <description>Direction the icon faces: an angle in degrees (0 = right/east, 90 = down/south, clockwise) or a name: N, NE, E, SE, S, SW, W, NW (also up, down, left, right). For an upright truck facing left use Mirror instead of 180 degrees.</description>
+                <description>Direction the icon faces: an angle in degrees (0 = right/east, 90 = down/south, clockwise) or a name: N, NE, E, SE, S, SW, W, NW (also up, down, left, right).</description>
                 <attributeTypes>
                     <attributeType name="String" />
                     <attributeType name="Enum" />
@@ -102,7 +102,7 @@
 
             <property key="mirrorAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Mirror (flip horizontally)</caption>
-                <description>Boolean (or "true"/"yes") to flip the icon left-right, e.g. a truck facing left.</description>
+                <description>Boolean (or "true"/"yes") to flip the icon left-right (mainly for custom side-view icons).</description>
                 <attributeTypes>
                     <attributeType name="Boolean" />
                     <attributeType name="String" />

@@ -18,8 +18,8 @@ export const SHAPE_PATHS: Record<string, string> = {
         "M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57l-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3z"
 };
 
-// Box-truck side view, facing right (same geometry as the Truck Scheduler widget).
-const TRUCK_VIEWBOX = { x: -1, y: -1, w: 27, h: 20.5 };
+// Box truck seen from above, heading right (0° = east). Length 28 x width 14 plus padding.
+const TRUCK_VIEWBOX = { x: -1, y: -1, w: 30, h: 16 };
 const TRUCK_NAMES = new Set(["truck", "truck-filled", "truck-outline"]);
 
 export const SHAPE_NAMES = ["truck", ...Object.keys(SHAPE_PATHS)];
@@ -94,6 +94,14 @@ export function Shape({
     if (shape.kind === "truck") {
         const solid = shape.forceFill ?? filled;
         const { x, y, w, h } = TRUCK_VIEWBOX;
+        // Wheel pairs: rear axle and front axle, poking out of both sides of the body.
+        const wheels = [
+            { x: 3, y: 0 },
+            { x: 3, y: 11.6 },
+            { x: 21.2, y: 0 },
+            { x: 21.2, y: 11.6 }
+        ];
+        const cab = "M20 2.2H25Q28 2.2 28 5.2V8.8Q28 11.8 25 11.8H20Z";
         return (
             <svg
                 className="layout-overlay__shape"
@@ -103,18 +111,27 @@ export function Shape({
                 aria-hidden="true"
             >
                 {solid ? (
-                    <g fill={color} stroke="rgba(0,0,0,0.35)" strokeWidth={0.5} strokeLinejoin="round">
-                        <rect x={0} y={0} width={17} height={11} />
-                        <polygon points="17,2 21,2 25,4.88 25,11 17,11" />
-                        <circle cx={4.25} cy={15.5} r={3} />
-                        <circle cx={21.8} cy={15.5} r={3} />
+                    <g stroke="rgba(0,0,0,0.35)" strokeWidth={0.5} strokeLinejoin="round">
+                        {wheels.map((p, i) => (
+                            <g key={i}>
+                                <rect x={p.x} y={p.y} width={4.6} height={2.4} rx={0.6} fill={color} />
+                                <rect x={p.x} y={p.y} width={4.6} height={2.4} rx={0.6} fill="rgba(0,0,0,0.5)" />
+                            </g>
+                        ))}
+                        <rect x={0} y={1.2} width={19} height={11.6} rx={1.4} fill={color} />
+                        <path d={cab} fill={color} />
+                        <path d="M23.6 3.6L26.2 5.4V8.6L23.6 10.4Z" fill="rgba(255,255,255,0.7)" stroke="none" />
+                        <path d="M19 7H20" stroke="rgba(0,0,0,0.5)" strokeWidth={1} />
                     </g>
                 ) : (
-                    <g fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round">
-                        <rect x={0.75} y={0.75} width={15.5} height={9.5} />
-                        <polygon points="17.75,2.75 21,2.75 24.25,4.88 24.25,10.25 17.75,10.25" />
-                        <circle cx={4.25} cy={15.5} r={2.5} />
-                        <circle cx={21.8} cy={15.5} r={2.5} />
+                    <g fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" strokeLinecap="round">
+                        {wheels.map((p, i) => (
+                            <rect key={i} x={p.x + 0.6} y={p.y + 0.6} width={3.4} height={1.2} rx={0.4} />
+                        ))}
+                        <rect x={0.6} y={1.8} width={17.8} height={10.4} rx={1.2} />
+                        <path d="M20.6 2.8H25Q27.4 2.8 27.4 5.2V8.8Q27.4 11.2 25 11.2H20.6Z" />
+                        <path d="M23.8 4L25.8 5.5V8.5L23.8 10Z" />
+                        <path d="M18.4 7H20.6" />
                     </g>
                 )}
             </svg>
