@@ -64,6 +64,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
+    const [lastEvent, setLastEvent] = useState<string | null>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
     const zMin = Math.max(10, minZoom) / 100;
     const zMax = Math.max(zMin, maxZoom / 100);
@@ -184,18 +185,37 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 // Fallback: hand the new coordinates to the page context so a microflow can save them.
                 const mx = movedXAttr;
                 const my = movedYAttr;
-                if (mx && my && !mx.readOnly && !my.readOnly && onMarkerChange?.get(item).canExecute) {
+                const action = onMarkerChange?.get(item);
+                const problems: string[] = [];
+                if (!mx || !my) {
+                    problems.push("Moved X / Moved Y are not configured (Editing tab)");
+                } else if (mx.readOnly || my.readOnly) {
+                    problems.push(
+                        "Moved X / Moved Y are read-only or have no object (is the widget inside the data view of that entity, and has it loaded?)"
+                    );
+                }
+                if (!onMarkerChange) {
+                    problems.push('"On marker moved / changed" is not configured (Events tab)');
+                } else if (!action?.canExecute) {
+                    problems.push(
+                        '"On marker moved / changed" cannot execute (microflow parameters such as the context object are not available to the widget)'
+                    );
+                }
+                if (problems.length === 0 && mx && my && action) {
                     mx.setValue(new Big(round(x)));
                     my.setValue(new Big(round(y)));
                     setWarning(null);
-                    run(onMarkerChange.get(item));
+                    setLastEvent(`Moved to (${round(x)}, ${round(y)}) → action called`);
+                    action.execute();
                 } else {
-                    setWarning(
-                        "X/Y attributes are read-only, so the move cannot be saved. Check entity access rules (write access to X and Y) or configure Moved X/Y output attributes."
-                    );
+                    // eslint-disable-next-line no-console
+                    console.warn("[LayoutOverlay] move not saved:", problems);
+                    setWarning(`X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`);
+                    setLastEvent(`Moved to (${round(x)}, ${round(y)}) → NOT saved`);
                 }
                 return;
             }
+            setLastEvent(`Moved to (${round(x)}, ${round(y)}) → written to Bay`);
             setWarning(null);
             xv.setValue(new Big(round(x)));
             yv.setValue(new Big(round(y)));
@@ -383,6 +403,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         </span>
                     )}
                     {editing && <span>Drag markers · arrow keys nudge · click empty space to add</span>}
+                    {editing && lastEvent && <span className="layout-overlay__last">{lastEvent}</span>}
                 </div>
             )}
             {legendItems.length > 0 && (

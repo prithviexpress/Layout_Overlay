@@ -26,3 +26,4 @@
 .layout-overlay__canvas--pan { cursor: grabbing; }
 .layout-overlay__zoom { display: inline-flex; align-items: center; gap: 4px; }
 .layout-overlay__zoom-label { min-width: 42px; text-align: center; }
+.layout-overlay__last { font-weight: 600; color: #1565c0; }
