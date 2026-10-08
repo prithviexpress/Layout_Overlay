@@ -27,12 +27,14 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 
 ## Hover card and legend
 - **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
-- **Legend → Legend items:** caption, color and shape per entry, shown above the canvas.
+- **Title:** heading above the plan (text template, left / center / right).
+- **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
 ## Zoom and scroll
 - **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac); toolbar has − / + / Fit.
 - Scroll and **Shift + scroll** pan; dragging empty space pans when not editing.
 - **Marker scaling:** Fixed (pixel size), Smooth (grows with the square root of zoom, default) or Proportional (scales exactly with the plan).
+- **Fit width** fills the widget width (scroll vertically if taller); **Fit page** shows the whole plan at once, even below the minimum zoom.
 - Properties: min / max / initial zoom %, max viewport height (0 = 80% of window).
 
 ## Multi-select and alignment (edit mode)

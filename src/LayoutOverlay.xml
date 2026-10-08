@@ -315,11 +315,30 @@
 
         </propertyGroup>
 
+        <propertyGroup caption="Title">
+
+            <property key="titleText" type="textTemplate" required="false">
+                <caption>Title</caption>
+                <description>Heading shown above the plan, e.g. "TRUCK CALLING SYSTEM - AS-KB". Can use page parameters. Leave empty for no title.</description>
+            </property>
+
+            <property key="titleAlign" type="enumeration" defaultValue="center">
+                <caption>Title alignment</caption>
+                <description>Horizontal alignment of the title.</description>
+                <enumerationValues>
+                    <enumerationValue key="left">Left</enumerationValue>
+                    <enumerationValue key="center">Center</enumerationValue>
+                    <enumerationValue key="right">Right</enumerationValue>
+                </enumerationValues>
+            </property>
+
+        </propertyGroup>
+
         <propertyGroup caption="Legend">
 
             <property key="legendItems" type="object" isList="true" required="false">
                 <caption>Legend items</caption>
-                <description>Optional legend shown above the canvas, e.g. "Planned and Occupied" in green.</description>
+                <description>Legend shown above the canvas: up to 6 entries, each with its own shape, color and caption (e.g. "Planned and Occupied" in green).</description>
                 <properties>
                     <propertyGroup caption="Item">
                         <property key="legendCaption" type="string" required="true">

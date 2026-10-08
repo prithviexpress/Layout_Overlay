@@ -25,6 +25,8 @@ export interface HoverLinesType {
     bold: boolean;
 }
 
+export type TitleAlignEnum = "left" | "center" | "right";
+
 export interface LegendItemsType {
     legendCaption: string;
     legendColor: string;
@@ -88,6 +90,8 @@ export interface LayoutOverlayContainerProps {
     hoverTitle?: ListExpressionValue<string>;
     hoverLines: HoverLinesType[];
     hoverDelay: number;
+    titleText?: DynamicValue<string>;
+    titleAlign: TitleAlignEnum;
     legendItems: LegendItemsType[];
 }
 
@@ -143,5 +147,7 @@ export interface LayoutOverlayPreviewProps {
     hoverTitle: string;
     hoverLines: HoverLinesPreviewType[];
     hoverDelay: number | null;
+    titleText: string;
+    titleAlign: TitleAlignEnum;
     legendItems: LegendItemsPreviewType[];
 }

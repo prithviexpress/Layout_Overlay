@@ -268,3 +268,4 @@
     .layout-overlay__pulse { animation: none; opacity: 0.5; }
     .layout-overlay__shape-wrap, .layout-overlay__card { transition: none; animation: none; }
 }
+.layout-overlay__title { margin: 0 0 8px; padding: 2px 4px; font-size: 20px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.25; color: var(--lo-text); }

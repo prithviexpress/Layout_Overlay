@@ -84,6 +84,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         hoverLines,
         hoverDelay,
         legendItems,
+        titleText,
+        titleAlign,
         movedYAttr,
         newYAttr,
         onMarkerClick,
@@ -118,26 +120,49 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     // Zoom keeping the point (px, py) of the viewport fixed.
     const zoomTo = useCallback(
-        (next: number, px?: number, py?: number) => {
+        (next: number, px?: number, py?: number, reset = false) => {
             const vp = viewportRef.current;
             const cv = canvasRef.current;
-            const z = Math.min(zMax, Math.max(zMin, next));
-            if (!vp || !cv || z === zoomRef.current) {
+            // Fit actions may go below the configured minimum so the whole plan always fits.
+            const z = Math.min(zMax, Math.max(reset ? 0.05 : zMin, next));
+            if (!vp || !cv) {
+                return;
+            }
+            if (z === zoomRef.current) {
+                if (reset) {
+                    vp.scrollLeft = 0;
+                    vp.scrollTop = 0;
+                }
                 return;
             }
             const ax = px ?? vp.clientWidth / 2;
             const ay = py ?? vp.clientHeight / 2;
-            anchorRef.current = {
-                fx: (vp.scrollLeft + ax) / cv.offsetWidth,
-                fy: (vp.scrollTop + ay) / cv.offsetHeight,
-                px: ax,
-                py: ay
-            };
+            anchorRef.current = reset
+                ? { fx: 0, fy: 0, px: 0, py: 0 }
+                : {
+                      fx: (vp.scrollLeft + ax) / cv.offsetWidth,
+                      fy: (vp.scrollTop + ay) / cv.offsetHeight,
+                      px: ax,
+                      py: ay
+                  };
             zoomRef.current = z;
             setZoomState(z);
         },
         [zMin, zMax]
     );
+
+    const fitWidth = (): void => zoomTo(1, 0, 0, true);
+
+    const fitPage = (): void => {
+        const vp = viewportRef.current;
+        if (!vp) {
+            return;
+        }
+        const cap = (viewportHeight > 0 ? viewportHeight : window.innerHeight * 0.8) - 4;
+        const widthAtFit = vp.clientWidth;
+        const zFit = (cap * canvasWidth) / (Math.max(1, widthAtFit) * canvasHeight);
+        zoomTo(Math.min(1, zFit), 0, 0, true);
+    };
 
     useLayoutEffect(() => {
         const a = anchorRef.current;
@@ -658,6 +683,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
+            {titleText?.value && (
+                <div className="layout-overlay__title" style={{ textAlign: titleAlign }}>
+                    {titleText.value}
+                </div>
+            )}
             {(allowEditing || allowZoom) && (
                 <div className="layout-overlay__toolbar">
                     {allowEditing && (
@@ -694,10 +724,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <button
                                 type="button"
                                 className="layout-overlay__btn layout-overlay__btn--flat"
-                                title="Fit to width"
-                                onClick={() => zoomTo(1)}
+                                title="Fit width: the plan fills the widget width (scroll vertically if taller)"
+                                onClick={fitWidth}
                             >
-                                Fit
+                                Fit width
+                            </button>
+                            <button
+                                type="button"
+                                className="layout-overlay__btn layout-overlay__btn--flat"
+                                title="Fit page: the whole plan is visible at once, no scrolling"
+                                onClick={fitPage}
+                            >
+                                Fit page
                             </button>
                         </span>
                     )}
@@ -727,7 +765,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             )}
             {legendItems.length > 0 && (
                 <div className="layout-overlay__legend">
-                    {legendItems.map((l, i) => (
+                    {legendItems.slice(0, 6).map((l, i) => (
                         <span key={i} className="layout-overlay__legend-item">
                             <Shape shape={parseShape(l.legendShape)} color={l.legendColor} size={14} rotation={0} />
                             {l.legendCaption}
@@ -753,6 +791,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     }`}
                     style={{
                         width: `${zoom * 100}%`,
+                        marginInline: "auto",
                         aspectRatio: `${w} / ${h}`,
                         backgroundImage: bgUrl ? `url("${bgUrl}")` : undefined
                     }}
