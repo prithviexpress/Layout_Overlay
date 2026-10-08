@@ -8,7 +8,9 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
     const samples = [
         { x: 20, y: 30, s: "thumbs-up", c: "#2e7d32" },
         { x: 55, y: 55, s: "thumbs-down", c: "#d32f2f" },
-        { x: 80, y: 25, s: "star", c: "#ef6c00" }
+        { x: 80, y: 25, s: "star", c: "#ef6c00" },
+        { x: 35, y: 70, s: "truck", c: "#1565c0", filled: true },
+        { x: 65, y: 78, s: "truck", c: "#1565c0", filled: false }
     ];
     const legend = props.legendItems.slice(0, 6);
     return (
@@ -31,7 +33,13 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                 >
                     {legend.map((l, i) => (
                         <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                            <Shape shape={parseShape(l.legendShape)} color={l.legendColor} size={14} rotation={0} />
+                            <Shape
+                                shape={parseShape(l.legendShape)}
+                                color={l.legendColor}
+                                size={14}
+                                rotation={0}
+                                filled={l.legendFilled}
+                            />
                             {l.legendCaption}
                         </span>
                     ))}
@@ -52,7 +60,7 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                 <div style={{ position: "absolute", top: 4, left: 8, color: "#666" }}>Layout Overlay</div>
                 {samples.map(m => (
                     <div
-                        key={m.s}
+                        key={`${m.s}-${m.x}`}
                         style={{
                             position: "absolute",
                             left: `${m.x}%`,
@@ -60,7 +68,13 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                             transform: "translate(-50%,-50%)"
                         }}
                     >
-                        <Shape shape={parseShape(m.s)} color={m.c} size={28} rotation={0} />
+                        <Shape
+                            shape={parseShape(m.s)}
+                            color={m.c}
+                            size={m.s === "truck" ? 36 : 28}
+                            rotation={0}
+                            filled={m.filled ?? true}
+                        />
                     </div>
                 ))}
             </div>

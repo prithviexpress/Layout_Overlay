@@ -18,6 +18,8 @@ import { CSSProperties } from "react";
 
 export type CoordModeEnum = "percent" | "pixels";
 
+export type DefaultFillEnum = "filled" | "outline";
+
 export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
 export interface HoverLinesType {
@@ -30,6 +32,7 @@ export type TitleAlignEnum = "left" | "center" | "right";
 export interface LegendItemsType {
     legendCaption: string;
     legendColor: string;
+    legendFilled: boolean;
     legendShape: string;
 }
 
@@ -41,6 +44,7 @@ export interface HoverLinesPreviewType {
 export interface LegendItemsPreviewType {
     legendCaption: string;
     legendColor: string;
+    legendFilled: boolean;
     legendShape: string;
 }
 
@@ -58,6 +62,12 @@ export interface LayoutOverlayContainerProps {
     sizeAttr?: ListAttributeValue<Big>;
     rotationAttr?: ListAttributeValue<Big>;
     labelAttr?: ListAttributeValue<string>;
+    orientationAttr?: ListAttributeValue<string | Big>;
+    mirrorAttr?: ListAttributeValue<boolean | string>;
+    scaleAttr?: ListAttributeValue<Big>;
+    scaleXAttr?: ListAttributeValue<Big>;
+    scaleYAttr?: ListAttributeValue<Big>;
+    fillAttr?: ListAttributeValue<boolean | string>;
     pulseAttr?: ListAttributeValue<boolean>;
     tooltipAttr?: ListAttributeValue<string>;
     backgroundImage?: DynamicValue<WebImage>;
@@ -66,6 +76,7 @@ export interface LayoutOverlayContainerProps {
     canvasWidth: number;
     canvasHeight: number;
     defaultSize: number;
+    defaultFill: DefaultFillEnum;
     defaultColor: string;
     allowZoom: boolean;
     minZoom: number;
@@ -115,6 +126,12 @@ export interface LayoutOverlayPreviewProps {
     sizeAttr: string;
     rotationAttr: string;
     labelAttr: string;
+    orientationAttr: string;
+    mirrorAttr: string;
+    scaleAttr: string;
+    scaleXAttr: string;
+    scaleYAttr: string;
+    fillAttr: string;
     pulseAttr: string;
     tooltipAttr: string;
     backgroundImage: { type: "static"; imageUrl: string } | { type: "dynamic"; entity: string } | null;
@@ -123,6 +140,7 @@ export interface LayoutOverlayPreviewProps {
     canvasWidth: number | null;
     canvasHeight: number | null;
     defaultSize: number | null;
+    defaultFill: DefaultFillEnum;
     defaultColor: string;
     allowZoom: boolean;
     minZoom: number | null;

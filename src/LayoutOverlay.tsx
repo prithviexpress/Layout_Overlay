@@ -2,7 +2,8 @@ import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useRef, u
 import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
-import { Shape, SHAPE_NAMES, parseShape } from "./components/shapes";
+import { Shape, SHAPE_NAMES, parseShape, shapeAspect } from "./components/shapes";
+import { parseBool, parseFilled, parseOrientation, positiveNum } from "./components/orient";
 import { Icon, IconKind } from "./components/icons";
 import "./ui/LayoutOverlay.css";
 
@@ -56,6 +57,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         colorAttr,
         sizeAttr,
         rotationAttr,
+        orientationAttr,
+        mirrorAttr,
+        scaleAttr,
+        scaleXAttr,
+        scaleYAttr,
+        fillAttr,
+        defaultFill,
         labelAttr,
         pulseAttr,
         tooltipAttr,
@@ -767,7 +775,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 <div className="layout-overlay__legend">
                     {legendItems.slice(0, 6).map((l, i) => (
                         <span key={i} className="layout-overlay__legend-item">
-                            <Shape shape={parseShape(l.legendShape)} color={l.legendColor} size={14} rotation={0} />
+                            <Shape
+                                shape={parseShape(l.legendShape)}
+                                color={l.legendColor}
+                                size={l.legendShape.toLowerCase().startsWith("truck") ? 20 : 14}
+                                rotation={0}
+                                filled={l.legendFilled}
+                            />
                             {l.legendCaption}
                         </span>
                     ))}
@@ -814,6 +828,19 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const isDrag = !!drag?.moved && drag.ids.includes(item.id);
                         const { x, y } = displayPos(item);
                         const size = (num(sizeAttr?.get(item).value, defaultSize) || defaultSize) * markerScale;
+                        const shapeDef = parseShape(shapeAttr?.get(item).value);
+                        const filled = parseFilled(fillAttr?.get(item).value, defaultFill === "filled");
+                        const angle =
+                            parseOrientation(orientationAttr?.get(item).value) + num(rotationAttr?.get(item).value);
+                        const uniform = positiveNum(scaleAttr?.get(item).value);
+                        const scaleX = uniform * positiveNum(scaleXAttr?.get(item).value);
+                        const scaleY = uniform * positiveNum(scaleYAttr?.get(item).value);
+                        const mirror = parseBool(mirrorAttr?.get(item).value);
+                        const boxW = size * scaleX;
+                        const boxH = size * shapeAspect(shapeDef) * scaleY;
+                        const rad = (angle * Math.PI) / 180;
+                        // Half the rotated extent, so the label clears a rotated icon.
+                        const labelOffset = (Math.abs(boxW * Math.sin(rad)) + Math.abs(boxH * Math.cos(rad))) / 2 + 3;
                         const color = colorAttr?.get(item).value || defaultColor;
                         const label = labelAttr?.get(item).value;
                         const showLabel = !!label && zoom * 100 >= labelMinZoom;
@@ -861,16 +888,30 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 }}
                                 onKeyDown={e => onMarkerKeyDown(e, item)}
                             >
-                                <span className="layout-overlay__shape-wrap" style={{ width: size, height: size }}>
+                                <span
+                                    className="layout-overlay__shape-wrap"
+                                    style={{ width: size * scaleX, height: size * shapeAspect(shapeDef) * scaleY }}
+                                >
                                     {pulse && <span className="layout-overlay__pulse" />}
                                     <Shape
-                                        shape={parseShape(shapeAttr?.get(item).value)}
+                                        shape={shapeDef}
                                         color={color}
                                         size={size}
-                                        rotation={num(rotationAttr?.get(item).value)}
+                                        rotation={angle}
+                                        filled={filled}
+                                        scaleX={scaleX}
+                                        scaleY={scaleY}
+                                        mirror={mirror}
                                     />
                                 </span>
-                                {showLabel && <span className="layout-overlay__label">{label}</span>}
+                                {showLabel && (
+                                    <span
+                                        className="layout-overlay__label"
+                                        style={{ top: `calc(50% + ${labelOffset}px)` }}
+                                    >
+                                        {label}
+                                    </span>
+                                )}
                             </div>
                         );
                     })}
@@ -979,6 +1020,33 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         single,
                                         new Big(Math.max(8, Number(e.target.value) || defaultSize))
                                     )
+                                }
+                            />
+                        </label>
+                    )}
+                    {rotationAttr && (
+                        <label>
+                            Angle{" "}
+                            <input
+                                type="number"
+                                step="any"
+                                value={num(rotationAttr.get(single).value)}
+                                disabled={rotationAttr.get(single).readOnly}
+                                onChange={e => setAttr(rotationAttr, single, new Big(Number(e.target.value) || 0))}
+                            />
+                        </label>
+                    )}
+                    {scaleAttr && (
+                        <label>
+                            Scale{" "}
+                            <input
+                                type="number"
+                                step="0.1"
+                                min={0.1}
+                                value={positiveNum(scaleAttr.get(single).value)}
+                                disabled={scaleAttr.get(single).readOnly}
+                                onChange={e =>
+                                    setAttr(scaleAttr, single, new Big(Math.max(0.1, Number(e.target.value) || 1)))
                                 }
                             />
                         </label>

@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
 
-// All paths are drawn in a 24x24 viewBox.
+// All path shapes are drawn in a 24x24 viewBox.
 export const SHAPE_PATHS: Record<string, string> = {
     circle: "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20z",
     square: "M3 3h18v18H3z",
@@ -18,9 +18,16 @@ export const SHAPE_PATHS: Record<string, string> = {
         "M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57l-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3z"
 };
 
-export const SHAPE_NAMES = Object.keys(SHAPE_PATHS);
+// Box-truck side view, facing right (same geometry as the Truck Scheduler widget).
+const TRUCK_VIEWBOX = { x: -1, y: -1, w: 27, h: 20.5 };
+const TRUCK_NAMES = new Set(["truck", "truck-filled", "truck-outline"]);
 
-export type ParsedShape = { kind: "path"; d: string } | { kind: "image"; url: string };
+export const SHAPE_NAMES = ["truck", ...Object.keys(SHAPE_PATHS)];
+
+export type ParsedShape =
+    | { kind: "path"; d: string }
+    | { kind: "image"; url: string }
+    | { kind: "truck"; forceFill?: boolean };
 
 export function parseShape(value: string | undefined): ParsedShape {
     const v = (value ?? "").trim();
@@ -30,24 +37,102 @@ export function parseShape(value: string | undefined): ParsedShape {
     if (v.startsWith("url:")) {
         return { kind: "image", url: v.slice(4).trim() };
     }
-    return { kind: "path", d: SHAPE_PATHS[v.toLowerCase()] ?? SHAPE_PATHS.circle };
+    const name = v.toLowerCase();
+    if (TRUCK_NAMES.has(name)) {
+        return {
+            kind: "truck",
+            forceFill: name === "truck-filled" ? true : name === "truck-outline" ? false : undefined
+        };
+    }
+    return { kind: "path", d: SHAPE_PATHS[name] ?? SHAPE_PATHS.circle };
+}
+
+/** Height / width of the unscaled shape. */
+export function shapeAspect(shape: ParsedShape): number {
+    return shape.kind === "truck" ? TRUCK_VIEWBOX.h / TRUCK_VIEWBOX.w : 1;
 }
 
 interface ShapeProps {
     shape: ParsedShape;
     color: string;
+    /** Width in px of the unscaled shape. */
     size: number;
+    /** Clockwise degrees. */
     rotation: number;
+    filled?: boolean;
+    scaleX?: number;
+    scaleY?: number;
+    mirror?: boolean;
 }
 
-export function Shape({ shape, color, size, rotation }: ShapeProps): ReactElement {
-    const style = { width: size, height: size, transform: rotation ? `rotate(${rotation}deg)` : undefined };
+export function Shape({
+    shape,
+    color,
+    size,
+    rotation,
+    filled = true,
+    scaleX = 1,
+    scaleY = 1,
+    mirror = false
+}: ShapeProps): ReactElement {
+    const width = size * scaleX;
+    const height = size * shapeAspect(shape) * scaleY;
+    const transform = [rotation ? `rotate(${rotation}deg)` : "", mirror ? "scaleX(-1)" : ""].filter(Boolean).join(" ");
+    const style = { width, height, transform: transform || undefined };
+
     if (shape.kind === "image") {
-        return <img className="layout-overlay__shape" src={shape.url} style={style} alt="" draggable={false} />;
+        return (
+            <img
+                className="layout-overlay__shape"
+                src={shape.url}
+                style={{ ...style, opacity: filled ? 1 : 0.4 }}
+                alt=""
+                draggable={false}
+            />
+        );
+    }
+    if (shape.kind === "truck") {
+        const solid = shape.forceFill ?? filled;
+        const { x, y, w, h } = TRUCK_VIEWBOX;
+        return (
+            <svg
+                className="layout-overlay__shape"
+                viewBox={`${x} ${y} ${w} ${h}`}
+                preserveAspectRatio="none"
+                style={style}
+                aria-hidden="true"
+            >
+                {solid ? (
+                    <g fill={color} stroke="rgba(0,0,0,0.35)" strokeWidth={0.5} strokeLinejoin="round">
+                        <rect x={0} y={0} width={17} height={11} />
+                        <polygon points="17,2 21,2 25,4.88 25,11 17,11" />
+                        <circle cx={4.25} cy={15.5} r={3} />
+                        <circle cx={21.8} cy={15.5} r={3} />
+                    </g>
+                ) : (
+                    <g fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round">
+                        <rect x={0.75} y={0.75} width={15.5} height={9.5} />
+                        <polygon points="17.75,2.75 21,2.75 24.25,4.88 24.25,10.25 17.75,10.25" />
+                        <circle cx={4.25} cy={15.5} r={2.5} />
+                        <circle cx={21.8} cy={15.5} r={2.5} />
+                    </g>
+                )}
+            </svg>
+        );
     }
     return (
-        <svg className="layout-overlay__shape" viewBox="0 0 24 24" style={style} aria-hidden="true">
-            <path d={shape.d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
+        <svg
+            className="layout-overlay__shape"
+            viewBox="0 0 24 24"
+            preserveAspectRatio="none"
+            style={style}
+            aria-hidden="true"
+        >
+            {filled ? (
+                <path d={shape.d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
+            ) : (
+                <path d={shape.d} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+            )}
         </svg>
     );
 }

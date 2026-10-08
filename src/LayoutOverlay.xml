@@ -48,7 +48,7 @@
 
             <property key="shapeAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Shape</caption>
-                <description>Built-in: circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
+                <description>Built-in: truck, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
                 <attributeTypes>
                     <attributeType name="String" />
                     <attributeType name="Enum" />
@@ -73,8 +73,8 @@
             </property>
 
             <property key="rotationAttr" type="attribute" dataSource="markers" required="false">
-                <caption>Rotation (deg)</caption>
-                <description>Rotation of the shape in degrees (clockwise).</description>
+                <caption>Angle offset (deg)</caption>
+                <description>Extra rotation in degrees (clockwise), added to Orientation. Use for fine angles such as 12.5.</description>
                 <attributeTypes>
                     <attributeType name="Decimal" />
                     <attributeType name="Integer" />
@@ -86,6 +86,64 @@
                 <description>Text shown beside the marker.</description>
                 <attributeTypes>
                     <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="orientationAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Orientation</caption>
+                <description>Direction the icon faces: an angle in degrees (0 = right/east, 90 = down/south, clockwise) or a name: N, NE, E, SE, S, SW, W, NW (also up, down, left, right). For an upright truck facing left use Mirror instead of 180 degrees.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Decimal" />
+                </attributeTypes>
+            </property>
+
+            <property key="mirrorAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Mirror (flip horizontally)</caption>
+                <description>Boolean (or "true"/"yes") to flip the icon left-right, e.g. a truck facing left.</description>
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
+            <property key="scaleAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Scale</caption>
+                <description>Uniform size multiplier on top of Size / default size (1 = normal, 2 = double, 0.5 = half).</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+
+            <property key="scaleXAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Scale X (width)</caption>
+                <description>Extra horizontal stretch multiplier (1 = none). Combined with Scale.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+
+            <property key="scaleYAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Scale Y (height)</caption>
+                <description>Extra vertical stretch multiplier (1 = none). Combined with Scale.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+
+            <property key="fillAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Fill / occupancy</caption>
+                <description>Filled or empty (outline) icon. Boolean true, or text occupied / filled / yes / busy = filled; false, or available / empty / outline / no / free = outline. Works for every shape, e.g. a filled truck for an occupied bay and an outlined truck for an empty one.</description>
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
                 </attributeTypes>
             </property>
 
@@ -142,6 +200,15 @@
             <property key="defaultSize" type="integer" defaultValue="28">
                 <caption>Default marker size (px)</caption>
                 <description>Marker size in pixels when no Size attribute value is available.</description>
+            </property>
+
+            <property key="defaultFill" type="enumeration" defaultValue="filled">
+                <caption>Default fill</caption>
+                <description>Used when no Fill / occupancy value is available.</description>
+                <enumerationValues>
+                    <enumerationValue key="filled">Filled</enumerationValue>
+                    <enumerationValue key="outline">Empty (outline)</enumerationValue>
+                </enumerationValues>
             </property>
 
             <property key="defaultColor" type="string" defaultValue="#d32f2f">
@@ -348,6 +415,10 @@
                         <property key="legendColor" type="string" defaultValue="#2e7d32" required="true">
                             <caption>Color</caption>
                             <description>CSS color of the swatch.</description>
+                        </property>
+                        <property key="legendFilled" type="boolean" defaultValue="true">
+                            <caption>Filled</caption>
+                            <description>Show the legend swatch filled (on) or as an empty outline (off).</description>
                         </property>
                         <property key="legendShape" type="string" defaultValue="circle" required="false">
                             <caption>Shape</caption>

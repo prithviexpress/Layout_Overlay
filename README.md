@@ -7,9 +7,17 @@ A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes
 
 ## Shapes
 `Shape` attribute value:
-- built-in name: `circle square triangle diamond star hexagon pin cross check warning thumbs-up thumbs-down`
+- built-in name: `truck circle square triangle diamond star hexagon pin cross check warning thumbs-up thumbs-down`
 - custom vector: `svg:<path d>` (drawn in a 24x24 viewBox)
 - custom image: `url:<image url>`
+
+### Truck icon, fill, scale and orientation
+- **`truck`** is a box-truck side view (the same icon as the Truck Scheduler widget), facing right.
+- **Fill / occupancy** (any shape): Boolean `true`, or text `occupied / filled / yes / busy` → filled; `false`, or `available / empty / outline / no / free` → empty outline. *Default fill* applies when the value is missing. Color comes from the **Color** attribute.
+- **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
+- **Mirror** flips the icon left-right (use this, not 180°, for an upright left-facing truck).
+- **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled or outline too.
+- Labels stay upright and clear rotated icons.
 
 ## Events (Mendix actions)
 | Property | When |
