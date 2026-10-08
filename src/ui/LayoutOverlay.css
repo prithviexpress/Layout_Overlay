@@ -1,0 +1,17 @@
+.layout-overlay { position: relative; width: 100%; font-family: inherit; }
+.layout-overlay__toolbar { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px; flex-wrap: wrap; }
+.layout-overlay__btn { border: 1px solid #bbb; background: #fff; border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+.layout-overlay__btn--on { background: #1976d2; color: #fff; border-color: #1976d2; }
+.layout-overlay__canvas { position: relative; width: 100%; overflow: hidden; border: 1px solid #ccc; background: #fafafa center / 100% 100% no-repeat; touch-action: none; user-select: none; }
+.layout-overlay__canvas--edit { cursor: crosshair; outline: 2px dashed #1976d2; outline-offset: -2px; }
+.layout-overlay__grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(0,0,0,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,.08) 1px, transparent 1px); }
+.layout-overlay__marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; outline: none; }
+.layout-overlay__marker--edit { cursor: grab; }
+.layout-overlay__marker--drag { cursor: grabbing; z-index: 10; }
+.layout-overlay__marker--selected .layout-overlay__shape { filter: drop-shadow(0 0 3px #1976d2) drop-shadow(0 0 2px #1976d2); }
+.layout-overlay__marker:focus-visible .layout-overlay__shape { filter: drop-shadow(0 0 3px #1976d2); }
+.layout-overlay__shape { display: block; pointer-events: none; }
+.layout-overlay__label { position: absolute; top: 100%; font-size: 11px; line-height: 1.1; white-space: nowrap; background: rgba(255,255,255,.8); padding: 0 3px; border-radius: 2px; pointer-events: none; }
+.layout-overlay__inspector { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px; margin-top: 4px; border: 1px solid #ddd; border-radius: 4px; background: #f7f7f7; font-size: 12px; }
+.layout-overlay__inspector input[type="number"] { width: 72px; }
+.layout-overlay__inspector input[type="text"] { width: 130px; }

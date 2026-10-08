@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<widget id="com.prithvi.layoutoverlay.LayoutOverlay"
+        pluginWidget="true"
+        needsEntityContext="false"
+        supportedPlatform="Web"
+        offlineCapable="false"
+        xmlns="http://www.mendix.com/widget/1.0/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/@mendix/pluggable-widgets-tools/dist/xsd/widget.xsd">
+
+    <name>Layout Overlay</name>
+    <description>Place clickable, draggable shape markers at X/Y coordinates over a background layout image. Shapes can be built-in, custom SVG paths or images. Every interaction can trigger a Mendix action.</description>
+    <studioProCategory>Add-ons</studioProCategory>
+
+    <properties>
+
+        <propertyGroup caption="Markers">
+
+            <property key="markers" type="datasource" isList="true" required="true">
+                <caption>Markers</caption>
+                <description>One object per marker.</description>
+            </property>
+
+            <property key="xAttr" type="attribute" dataSource="markers" required="true">
+                <caption>X</caption>
+                <description>Horizontal position. Must be editable for drag/move to save.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+            <property key="yAttr" type="attribute" dataSource="markers" required="true">
+                <caption>Y</caption>
+                <description>Vertical position (0 = top). Must be editable for drag/move to save.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+            <property key="shapeAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Shape</caption>
+                <description>Built-in: circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
+            <property key="colorAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Color</caption>
+                <description>CSS color (e.g. "#2e7d32").</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="sizeAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Size (px)</caption>
+                <description>Marker size in pixels. Falls back to default size.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+
+            <property key="rotationAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Rotation (deg)</caption>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                </attributeTypes>
+            </property>
+
+            <property key="labelAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Label</caption>
+                <description>Text shown beside the marker.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="tooltipAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Tooltip</caption>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+        </propertyGroup>
+
+        <propertyGroup caption="Canvas">
+
+            <property key="backgroundImage" type="image" required="false">
+                <caption>Background image</caption>
+                <description>Layout / floor plan image.</description>
+            </property>
+
+            <property key="backgroundUrl" type="expression" required="false">
+                <caption>Background URL</caption>
+                <description>Dynamic image URL. Overrides the static image when it returns a value.</description>
+                <returnType type="String" />
+            </property>
+
+            <property key="coordMode" type="enumeration" defaultValue="percent">
+                <caption>Coordinate unit</caption>
+                <description>Percent: X and Y are 0-100 of canvas. Pixels: X and Y are in canvas width/height units.</description>
+                <enumerationValues>
+                    <enumerationValue key="percent">Percent (0-100)</enumerationValue>
+                    <enumerationValue key="pixels">Pixels</enumerationValue>
+                </enumerationValues>
+            </property>
+
+            <property key="canvasWidth" type="integer" defaultValue="1000">
+                <caption>Canvas width</caption>
+                <description>Reference width; sets aspect ratio, and the X range in pixel mode. The canvas scales to its container.</description>
+            </property>
+
+            <property key="canvasHeight" type="integer" defaultValue="600">
+                <caption>Canvas height</caption>
+                <description>Reference height; sets aspect ratio, and the Y range in pixel mode.</description>
+            </property>
+
+            <property key="defaultSize" type="integer" defaultValue="28">
+                <caption>Default marker size (px)</caption>
+            </property>
+
+            <property key="defaultColor" type="string" defaultValue="#d32f2f">
+                <caption>Default marker color</caption>
+            </property>
+
+            <property key="showGrid" type="boolean" defaultValue="false">
+                <caption>Show grid</caption>
+            </property>
+
+            <property key="snapSize" type="integer" defaultValue="0">
+                <caption>Snap to grid</caption>
+                <description>Snap step in coordinate units while dragging. 0 = off.</description>
+            </property>
+
+        </propertyGroup>
+
+        <propertyGroup caption="Editing">
+
+            <property key="allowEditing" type="boolean" defaultValue="true">
+                <caption>Allow editing</caption>
+                <description>Show an Edit toggle. In edit mode markers can be dragged, nudged with arrow keys, and the selected marker's shape/color/size/position can be changed (when attributes are editable).</description>
+            </property>
+
+            <property key="startInEditMode" type="boolean" defaultValue="false">
+                <caption>Start in edit mode</caption>
+            </property>
+
+            <property key="newXAttr" type="attribute" required="false">
+                <caption>Clicked X (output)</caption>
+                <description>Receives the X of an empty-canvas click before "On canvas click" fires.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+            <property key="newYAttr" type="attribute" required="false">
+                <caption>Clicked Y (output)</caption>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+        </propertyGroup>
+
+        <propertyGroup caption="Events">
+
+            <property key="onMarkerClick" type="action" dataSource="markers" required="false">
+                <caption>On marker click</caption>
+            </property>
+
+            <property key="onMarkerDoubleClick" type="action" dataSource="markers" required="false">
+                <caption>On marker double click</caption>
+            </property>
+
+            <property key="onMarkerContextMenu" type="action" dataSource="markers" required="false">
+                <caption>On marker right click</caption>
+            </property>
+
+            <property key="onMarkerChange" type="action" dataSource="markers" required="false">
+                <caption>On marker moved / changed</caption>
+                <description>Fires after X/Y (or other attributes) were written. Commit the object here if needed.</description>
+            </property>
+
+            <property key="onCanvasClick" type="action" required="false">
+                <caption>On canvas click</caption>
+                <description>Fires on an empty-canvas click in edit mode, after Clicked X/Y are set. Use to create a new marker.</description>
+            </property>
+
+        </propertyGroup>
+
+        <propertyGroup caption="Common">
+            <systemProperty key="Name" />
+            <systemProperty key="TabIndex" />
+            <systemProperty key="Visibility" />
+        </propertyGroup>
+
+    </properties>
+</widget>
