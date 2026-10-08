@@ -9,6 +9,7 @@ import {
     EditableValue,
     ListActionValue,
     ListAttributeValue,
+    ListExpressionValue,
     ListValue,
     WebImage
 } from "mendix";
@@ -16,6 +17,28 @@ import { Big } from "big.js";
 import { CSSProperties } from "react";
 
 export type CoordModeEnum = "percent" | "pixels";
+
+export interface HoverLinesType {
+    text: ListExpressionValue<string>;
+    bold: boolean;
+}
+
+export interface LegendItemsType {
+    legendCaption: string;
+    legendColor: string;
+    legendShape: string;
+}
+
+export interface HoverLinesPreviewType {
+    text: string;
+    bold: boolean;
+}
+
+export interface LegendItemsPreviewType {
+    legendCaption: string;
+    legendColor: string;
+    legendShape: string;
+}
 
 export interface LayoutOverlayContainerProps {
     name: string;
@@ -51,6 +74,10 @@ export interface LayoutOverlayContainerProps {
     onMarkerContextMenu?: ListActionValue;
     onMarkerChange?: ListActionValue;
     onCanvasClick?: ActionValue;
+    hoverTitle?: ListExpressionValue<string>;
+    hoverLines: HoverLinesType[];
+    hoverDelay: number;
+    legendItems: LegendItemsType[];
 }
 
 export interface LayoutOverlayPreviewProps {
@@ -93,4 +120,8 @@ export interface LayoutOverlayPreviewProps {
     onMarkerContextMenu: {} | null;
     onMarkerChange: {} | null;
     onCanvasClick: {} | null;
+    hoverTitle: string;
+    hoverLines: HoverLinesPreviewType[];
+    hoverDelay: number | null;
+    legendItems: LegendItemsPreviewType[];
 }

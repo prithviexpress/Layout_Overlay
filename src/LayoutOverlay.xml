@@ -231,6 +231,62 @@
 
         </propertyGroup>
 
+        <propertyGroup caption="Hover card">
+
+            <property key="hoverTitle" type="textTemplate" dataSource="markers" required="false">
+                <caption>Title</caption>
+                <description>Bold first line of the hover card, e.g. the bay name. Can use marker attributes as parameters.</description>
+            </property>
+
+            <property key="hoverLines" type="object" isList="true" required="false">
+                <caption>Lines</caption>
+                <description>One entry per line in the hover card. Each line is a text template evaluated for the hovered marker, e.g. "Avg: {1} min  Util: {2}%". Lines that evaluate to empty text are hidden.</description>
+                <properties>
+                    <propertyGroup caption="Line">
+                        <property key="text" type="textTemplate" dataSource="../markers" required="true">
+                            <caption>Text</caption>
+                            <description>Line text; use {1}, {2}... for marker attributes.</description>
+                        </property>
+                        <property key="bold" type="boolean" defaultValue="false">
+                            <caption>Bold</caption>
+                            <description>Render this line in bold.</description>
+                        </property>
+                    </propertyGroup>
+                </properties>
+            </property>
+
+            <property key="hoverDelay" type="integer" defaultValue="100">
+                <caption>Hover delay (ms)</caption>
+                <description>Delay before the card appears.</description>
+            </property>
+
+        </propertyGroup>
+
+        <propertyGroup caption="Legend">
+
+            <property key="legendItems" type="object" isList="true" required="false">
+                <caption>Legend items</caption>
+                <description>Optional legend shown above the canvas, e.g. "Planned and Occupied" in green.</description>
+                <properties>
+                    <propertyGroup caption="Item">
+                        <property key="legendCaption" type="string" required="true">
+                            <caption>Caption</caption>
+                            <description>Legend text.</description>
+                        </property>
+                        <property key="legendColor" type="string" defaultValue="#2e7d32" required="true">
+                            <caption>Color</caption>
+                            <description>CSS color of the swatch.</description>
+                        </property>
+                        <property key="legendShape" type="string" defaultValue="circle" required="false">
+                            <caption>Shape</caption>
+                            <description>Same names as the marker Shape attribute (circle, square, triangle, ...).</description>
+                        </property>
+                    </propertyGroup>
+                </properties>
+            </property>
+
+        </propertyGroup>
+
         <propertyGroup caption="Common">
             <systemProperty key="Name" />
             <systemProperty key="TabIndex" />

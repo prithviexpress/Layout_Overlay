@@ -39,6 +39,10 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         startInEditMode,
         newXAttr,
         movedXAttr,
+        hoverTitle,
+        hoverLines,
+        hoverDelay,
+        legendItems,
         movedYAttr,
         newYAttr,
         onMarkerClick,
@@ -54,6 +58,32 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
+    const hoverTimer = useRef<number | undefined>(undefined);
+    const [hover, setHover] = useState<{ id: string; left: number; top: number; below: boolean } | null>(null);
+
+    const showHover = (e: React.SyntheticEvent, id: string): void => {
+        const el = e.currentTarget as HTMLElement;
+        window.clearTimeout(hoverTimer.current);
+        hoverTimer.current = window.setTimeout(() => {
+            const root = rootRef.current?.getBoundingClientRect();
+            if (!root) {
+                return;
+            }
+            const r = el.getBoundingClientRect();
+            const below = r.top - root.top < 90;
+            setHover({
+                id,
+                left: Math.min(Math.max(r.left - root.left + r.width / 2, 90), Math.max(90, root.width - 90)),
+                top: below ? r.bottom - root.top + 6 : r.top - root.top - 6,
+                below
+            });
+        }, Math.max(0, hoverDelay));
+    };
+    const hideHover = (): void => {
+        window.clearTimeout(hoverTimer.current);
+        setHover(null);
+    };
 
     const editing = allowEditing && editMode;
     const w = Math.max(1, canvasWidth);
@@ -66,6 +96,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
 
     const items = markers.items ?? [];
+    const hoverItem = drag || !hover ? undefined : items.find(i => i.id === hover.id);
     const selected = useMemo(() => items.find(i => i.id === selectedId), [items, selectedId]);
 
     const clamp = (v: number, max: number): number => Math.min(max, Math.max(0, v));
@@ -217,7 +248,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     }
 
     return (
-        <div className={`layout-overlay ${props.class}`} style={props.style}>
+        <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
             {allowEditing && (
                 <div className="layout-overlay__toolbar">
                     <button
@@ -228,6 +259,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         {editMode ? "Editing" : "Edit"}
                     </button>
                     {editing && <span>Drag markers · arrow keys nudge · click empty space to add</span>}
+                </div>
+            )}
+            {legendItems.length > 0 && (
+                <div className="layout-overlay__legend">
+                    {legendItems.map((l, i) => (
+                        <span key={i} className="layout-overlay__legend-item">
+                            <Shape shape={parseShape(l.legendShape)} color={l.legendColor} size={14} rotation={0} />
+                            {l.legendCaption}
+                        </span>
+                    ))}
                 </div>
             )}
             {warning && (
@@ -270,9 +311,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             className={cls}
                             role="button"
                             tabIndex={0}
-                            title={tooltipAttr?.get(item).value ?? label}
+                            title={
+                                hoverTitle || hoverLines.length > 0 ? undefined : tooltipAttr?.get(item).value ?? label
+                            }
                             style={{ left: `${toFracX(x) * 100}%`, top: `${toFracY(y) * 100}%` }}
-                            onPointerDown={e => onMarkerPointerDown(e, item)}
+                            onPointerEnter={e => showHover(e, item.id)}
+                            onPointerLeave={hideHover}
+                            onFocus={e => showHover(e, item.id)}
+                            onBlur={hideHover}
+                            onPointerDown={e => {
+                                hideHover();
+                                onMarkerPointerDown(e, item);
+                            }}
                             onPointerMove={onMarkerPointerMove}
                             onPointerUp={e => onMarkerPointerUp(e, item)}
                             onDoubleClick={() => run(onMarkerDoubleClick?.get(item))}
@@ -295,6 +345,25 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     );
                 })}
             </div>
+            {hover && hoverItem && (
+                <div
+                    className={`layout-overlay__card ${hover.below ? "layout-overlay__card--below" : ""}`}
+                    style={{ left: hover.left, top: hover.top }}
+                    role="tooltip"
+                >
+                    {hoverTitle?.get(hoverItem).value && (
+                        <div className="layout-overlay__card-title">{hoverTitle.get(hoverItem).value}</div>
+                    )}
+                    {hoverLines.map((l, i) => {
+                        const text = l.text.get(hoverItem).value;
+                        return text ? (
+                            <div key={i} className={l.bold ? "layout-overlay__card-bold" : undefined}>
+                                {text}
+                            </div>
+                        ) : null;
+                    })}
+                </div>
+            )}
             {editing && selected && (
                 <div className="layout-overlay__inspector">
                     <label>

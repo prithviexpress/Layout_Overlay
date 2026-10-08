@@ -16,3 +16,8 @@
 .layout-overlay__inspector input[type="number"] { width: 72px; }
 .layout-overlay__inspector input[type="text"] { width: 130px; }
 .layout-overlay__warning { margin: 4px 0; padding: 6px 8px; border: 1px solid #e0a800; background: #fff8e1; color: #6b4e00; font-size: 12px; border-radius: 4px; }
+.layout-overlay__legend { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; padding: 4px 8px; margin-bottom: 4px; font-size: 12px; }
+.layout-overlay__legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.layout-overlay__card { position: absolute; z-index: 20; transform: translate(-50%, -100%); max-width: 260px; padding: 6px 10px; border-radius: 4px; background: #222; color: #fff; font-size: 12px; line-height: 1.35; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.35); text-align: center; white-space: nowrap; }
+.layout-overlay__card--below { transform: translate(-50%, 0); }
+.layout-overlay__card-title, .layout-overlay__card-bold { font-weight: 700; }
