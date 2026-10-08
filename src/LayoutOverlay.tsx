@@ -3,7 +3,7 @@ import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
 import { Shape, SHAPE_NAMES, parseShape, shapeAspect, shapeWidthFactor } from "./components/shapes";
-import { parseBool, parseFilled, parseOrientation, positiveNum } from "./components/orient";
+import { parseBool, parseFilled, parseOccupancy, parseOrientation, positiveNum } from "./components/orient";
 import { Icon, IconKind } from "./components/icons";
 import "./ui/LayoutOverlay.css";
 
@@ -63,6 +63,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         scaleXAttr,
         scaleYAttr,
         fillAttr,
+        occupancyAttr,
+        occupiedStyle,
         defaultFill,
         labelAttr,
         pulseAttr,
@@ -781,6 +783,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 size={l.legendShape.toLowerCase().startsWith("truck") ? 32 : 14}
                                 rotation={0}
                                 filled={l.legendFilled}
+                                dotted={l.legendDotted}
                             />
                             {l.legendCaption}
                         </span>
@@ -829,7 +832,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const { x, y } = displayPos(item);
                         const size = (num(sizeAttr?.get(item).value, defaultSize) || defaultSize) * markerScale;
                         const shapeDef = parseShape(shapeAttr?.get(item).value);
-                        const filled = parseFilled(fillAttr?.get(item).value, defaultFill === "filled");
+                        // Occupancy wins over Fill: occupied = solid line, not occupied = dotted line.
+                        const occupancy = occupancyAttr ? parseOccupancy(occupancyAttr.get(item).value) : undefined;
+                        const filled =
+                            occupancy === undefined
+                                ? parseFilled(fillAttr?.get(item).value, defaultFill === "filled")
+                                : occupancy && occupiedStyle === "filled";
+                        const dotted = occupancy === false;
                         const angle =
                             parseOrientation(orientationAttr?.get(item).value) + num(rotationAttr?.get(item).value);
                         const uniform = positiveNum(scaleAttr?.get(item).value);
@@ -897,6 +906,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         size={baseW}
                                         rotation={angle}
                                         filled={filled}
+                                        dotted={dotted}
                                         scaleX={scaleX}
                                         scaleY={scaleY}
                                         mirror={mirror}

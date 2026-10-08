@@ -137,8 +137,18 @@
                 </attributeTypes>
             </property>
 
+            <property key="occupancyAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Occupancy</caption>
+                <description>Boolean (or text). Occupied (true / "occupied" / "yes" / "busy") draws the shape with a solid line in its color; not occupied (false / "available" / "empty" / "no" / "free") draws it with a dotted line. When set, it takes precedence over Fill. Empty or unknown values fall back to Fill.</description>
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
             <property key="fillAttr" type="attribute" dataSource="markers" required="false">
-                <caption>Fill / occupancy</caption>
+                <caption>Fill (filled / empty)</caption>
                 <description>Filled or empty (outline) icon. Boolean true, or text occupied / filled / yes / busy = filled; false, or available / empty / outline / no / free = outline. Works for every shape, e.g. a filled truck for an occupied bay and an outlined truck for an empty one.</description>
                 <attributeTypes>
                     <attributeType name="Boolean" />
@@ -204,10 +214,19 @@
 
             <property key="defaultFill" type="enumeration" defaultValue="filled">
                 <caption>Default fill</caption>
-                <description>Used when no Fill / occupancy value is available.</description>
+                <description>Used when no Fill or Occupancy value is available.</description>
                 <enumerationValues>
                     <enumerationValue key="filled">Filled</enumerationValue>
                     <enumerationValue key="outline">Empty (outline)</enumerationValue>
+                </enumerationValues>
+            </property>
+
+            <property key="occupiedStyle" type="enumeration" defaultValue="outline">
+                <caption>Occupied style</caption>
+                <description>How an occupied marker is drawn when Occupancy is set: a solid line (outline) or a solid filled shape. Not occupied is always a dotted line.</description>
+                <enumerationValues>
+                    <enumerationValue key="outline">Solid line</enumerationValue>
+                    <enumerationValue key="filled">Solid filled</enumerationValue>
                 </enumerationValues>
             </property>
 
@@ -419,6 +438,10 @@
                         <property key="legendFilled" type="boolean" defaultValue="true">
                             <caption>Filled</caption>
                             <description>Show the legend swatch filled (on) or as an empty outline (off).</description>
+                        </property>
+                        <property key="legendDotted" type="boolean" defaultValue="false">
+                            <caption>Dotted</caption>
+                            <description>Draw the swatch outline dotted (only when Filled is off), e.g. for "Not occupied".</description>
                         </property>
                         <property key="legendShape" type="string" defaultValue="circle" required="false">
                             <caption>Shape</caption>

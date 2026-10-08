@@ -13,10 +13,11 @@ A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes
 
 ### Truck icon, fill, scale and orientation
 - **`truck`** is a minimal top view of a tractor and trailer: two separate rounded shapes with a gap, a slim windshield, no wheels, heading right at 0°. Filled = solid, empty = outline. It is about 3:1 long, so its nominal width is 1.6 x the marker Size.
-- **Fill / occupancy** (any shape): Boolean `true`, or text `occupied / filled / yes / busy` → filled; `false`, or `available / empty / outline / no / free` → empty outline. *Default fill* applies when the value is missing. Color comes from the **Color** attribute.
+- **Occupancy** (any shape): Boolean `true`, or text `occupied / busy / yes / in use` → **solid line** in the marker's Color; `false`, or `available / empty / free / no` → **dotted line**. *Occupied style* switches occupied between a solid line (default) and a solid filled shape. When set, Occupancy wins over Fill; empty or unknown values fall back to Fill.
+- **Fill** (any shape): Boolean `true`, or text `occupied / filled / yes / busy` → filled; `false`, or `available / empty / outline / no / free` → empty outline. *Default fill* applies when the value is missing. Color comes from the **Color** attribute.
 - **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
-- **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled or outline too.
+- **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
 - Labels stay upright and clear rotated icons.
 
 ## Events (Mendix actions)

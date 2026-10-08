@@ -20,6 +20,8 @@ export type CoordModeEnum = "percent" | "pixels";
 
 export type DefaultFillEnum = "filled" | "outline";
 
+export type OccupiedStyleEnum = "outline" | "filled";
+
 export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
 export interface HoverLinesType {
@@ -33,6 +35,7 @@ export interface LegendItemsType {
     legendCaption: string;
     legendColor: string;
     legendFilled: boolean;
+    legendDotted: boolean;
     legendShape: string;
 }
 
@@ -45,6 +48,7 @@ export interface LegendItemsPreviewType {
     legendCaption: string;
     legendColor: string;
     legendFilled: boolean;
+    legendDotted: boolean;
     legendShape: string;
 }
 
@@ -67,6 +71,7 @@ export interface LayoutOverlayContainerProps {
     scaleAttr?: ListAttributeValue<Big>;
     scaleXAttr?: ListAttributeValue<Big>;
     scaleYAttr?: ListAttributeValue<Big>;
+    occupancyAttr?: ListAttributeValue<boolean | string>;
     fillAttr?: ListAttributeValue<boolean | string>;
     pulseAttr?: ListAttributeValue<boolean>;
     tooltipAttr?: ListAttributeValue<string>;
@@ -77,6 +82,7 @@ export interface LayoutOverlayContainerProps {
     canvasHeight: number;
     defaultSize: number;
     defaultFill: DefaultFillEnum;
+    occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;
     allowZoom: boolean;
     minZoom: number;
@@ -131,6 +137,7 @@ export interface LayoutOverlayPreviewProps {
     scaleAttr: string;
     scaleXAttr: string;
     scaleYAttr: string;
+    occupancyAttr: string;
     fillAttr: string;
     pulseAttr: string;
     tooltipAttr: string;
@@ -141,6 +148,7 @@ export interface LayoutOverlayPreviewProps {
     canvasHeight: number | null;
     defaultSize: number | null;
     defaultFill: DefaultFillEnum;
+    occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;
     allowZoom: boolean;
     minZoom: number | null;

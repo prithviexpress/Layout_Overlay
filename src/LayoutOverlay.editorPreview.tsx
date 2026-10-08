@@ -10,7 +10,7 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
         { x: 55, y: 55, s: "thumbs-down", c: "#d32f2f" },
         { x: 80, y: 25, s: "star", c: "#ef6c00" },
         { x: 35, y: 70, s: "truck", c: "#1565c0", filled: true },
-        { x: 65, y: 78, s: "truck", c: "#1565c0", filled: false }
+        { x: 65, y: 78, s: "truck", c: "#1565c0", filled: false, dotted: true }
     ];
     const legend = props.legendItems.slice(0, 6);
     return (
@@ -39,6 +39,7 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                                 size={14}
                                 rotation={0}
                                 filled={l.legendFilled}
+                                dotted={l.legendDotted}
                             />
                             {l.legendCaption}
                         </span>
@@ -74,6 +75,7 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                             size={m.s === "truck" ? 56 : 28}
                             rotation={0}
                             filled={m.filled ?? true}
+                            dotted={m.dotted ?? false}
                         />
                     </div>
                 ))}

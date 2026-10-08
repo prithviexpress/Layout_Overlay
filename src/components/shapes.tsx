@@ -65,6 +65,8 @@ interface ShapeProps {
     /** Clockwise degrees. */
     rotation: number;
     filled?: boolean;
+    /** Draw the outline as dots (only when not filled). */
+    dotted?: boolean;
     scaleX?: number;
     scaleY?: number;
     mirror?: boolean;
@@ -76,6 +78,7 @@ export function Shape({
     size,
     rotation,
     filled = true,
+    dotted = false,
     scaleX = 1,
     scaleY = 1,
     mirror = false
@@ -115,7 +118,14 @@ export function Shape({
                         <rect x={41.3} y={3.2} width={2.7} height={7.6} rx={1.2} fill="rgba(255,255,255,0.6)" />
                     </g>
                 ) : (
-                    <g fill="none" stroke={color} strokeWidth={1.1} strokeLinejoin="round">
+                    <g
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={dotted ? 1.5 : 1.1}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        strokeDasharray={dotted ? "0.01 2.7" : undefined}
+                    >
                         <rect x={0.55} y={1.55} width={31.1} height={10.9} rx={1.5} />
                         <path d="M33.55 1.55H42.4Q45.45 1.55 45.45 4.6V9.4Q45.45 12.45 42.4 12.45H33.55Z" />
                         <rect x={41.5} y={3.6} width={2.2} height={6.8} rx={1} />
@@ -135,7 +145,15 @@ export function Shape({
             {filled ? (
                 <path d={shape.d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
             ) : (
-                <path d={shape.d} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+                <path
+                    d={shape.d}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={1.6}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    strokeDasharray={dotted ? "0.01 3.2" : undefined}
+                />
             )}
         </svg>
     );

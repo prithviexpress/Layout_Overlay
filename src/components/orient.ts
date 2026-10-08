@@ -73,3 +73,18 @@ export const positiveNum = (v: Big | undefined | null, fallback = 1): number => 
     const n = v ? Number(v.toString()) : NaN;
     return Number.isFinite(n) && n > 0 ? n : fallback;
 };
+
+/** true / false when the value clearly says occupied / not occupied, undefined when empty or unknown. */
+export function parseOccupancy(v: string | Big | boolean | undefined | null): boolean | undefined {
+    if (typeof v === "boolean") {
+        return v;
+    }
+    const t = String(v ?? "").trim();
+    if (FILLED.test(t)) {
+        return true;
+    }
+    if (EMPTY.test(t)) {
+        return false;
+    }
+    return undefined;
+}
