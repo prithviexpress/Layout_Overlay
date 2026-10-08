@@ -53,6 +53,10 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Title:** shown in the same toolbar as Edit / zoom / legend (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
 - **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
+## Selection and hover
+- A selected (clicked) marker gets a blue glow that follows the icon's own outline and rotation; there is no box or ring around it.
+- Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.
+
 ## Zoom and scroll
 - **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac, or trackpad pinch); *Mouse wheel zoom = Wheel only* makes the wheel alone zoom (Shift+wheel scrolls sideways). Toolbar has − / + / Fit width / Fit page.
 - **Middle mouse button** pans in any mode.

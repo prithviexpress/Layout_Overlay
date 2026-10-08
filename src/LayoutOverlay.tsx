@@ -1031,10 +1031,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 className={cls}
                                 role="button"
                                 tabIndex={0}
+                                // One hover only: the hover card when configured, otherwise an optional Tooltip
+                                // attribute. The label is not repeated as a second (browser) tooltip while visible.
                                 title={
                                     hoverTitle || hoverLines.length > 0
                                         ? undefined
-                                        : tooltipAttr?.get(item).value ?? label
+                                        : tooltipAttr?.get(item).value || (showLabel ? undefined : label)
                                 }
                                 style={
                                     {
