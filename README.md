@@ -35,6 +35,17 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Marker scaling:** Fixed (pixel size), Smooth (grows with the square root of zoom, default) or Proportional (scales exactly with the plan).
 - Properties: min / max / initial zoom %, max viewport height (0 = 80% of window).
 
+## Multi-select and alignment (edit mode)
+- **Box-select:** drag on empty space to draw a selection box; Shift/Ctrl+click adds or removes markers; Ctrl+A selects all; Esc clears. A plain click on empty space still fires *On canvas click*.
+- **Group move:** drag any selected marker to move them all; arrow keys nudge the whole selection (Shift = x10).
+- **Align / distribute** (toolbar): left / center / right (same X), top / middle / bottom (same Y, i.e. in a row), distribute horizontally / vertically (3+ markers).
+- Group changes save **one marker at a time**: each marker triggers *On marker moved / changed* in turn (waiting for the previous call to finish), so a microflow never sees overlapping calls. Unchanged markers are not saved.
+
+## Look and feel
+- **Pulse (alert):** Boolean attribute → animated ring on that marker.
+- **Show labels from zoom (%)** hides labels on a dense plan until you zoom in.
+- Theme with CSS variables on the widget class: `--lo-accent`, `--lo-surface`, `--lo-border`, `--lo-radius`, ...
+
 ## Editing
 Toggle **Edit**: drag markers, arrow keys nudge (Shift = x10), inspector changes X/Y/shape/color/size/label. Optional grid + snap.
 

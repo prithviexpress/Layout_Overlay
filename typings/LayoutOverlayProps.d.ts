@@ -56,6 +56,7 @@ export interface LayoutOverlayContainerProps {
     sizeAttr?: ListAttributeValue<Big>;
     rotationAttr?: ListAttributeValue<Big>;
     labelAttr?: ListAttributeValue<string>;
+    pulseAttr?: ListAttributeValue<boolean>;
     tooltipAttr?: ListAttributeValue<string>;
     backgroundImage?: DynamicValue<WebImage>;
     backgroundUrl?: DynamicValue<string>;
@@ -70,6 +71,7 @@ export interface LayoutOverlayContainerProps {
     initialZoom: number;
     markerScaling: MarkerScalingEnum;
     viewportHeight: number;
+    labelMinZoom: number;
     showGrid: boolean;
     snapSize: number;
     allowEditing: boolean;
@@ -109,6 +111,7 @@ export interface LayoutOverlayPreviewProps {
     sizeAttr: string;
     rotationAttr: string;
     labelAttr: string;
+    pulseAttr: string;
     tooltipAttr: string;
     backgroundImage: { type: "static"; imageUrl: string } | { type: "dynamic"; entity: string } | null;
     backgroundUrl: string;
@@ -123,6 +126,7 @@ export interface LayoutOverlayPreviewProps {
     initialZoom: number | null;
     markerScaling: MarkerScalingEnum;
     viewportHeight: number | null;
+    labelMinZoom: number | null;
     showGrid: boolean;
     snapSize: number | null;
     allowEditing: boolean;

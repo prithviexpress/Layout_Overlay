@@ -89,6 +89,14 @@
                 </attributeTypes>
             </property>
 
+            <property key="pulseAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Pulse (alert)</caption>
+                <description>Boolean attribute. When true the marker gets an animated pulsing ring, e.g. for safety alerts or overstay.</description>
+                <attributeTypes>
+                    <attributeType name="Boolean" />
+                </attributeTypes>
+            </property>
+
             <property key="tooltipAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Tooltip</caption>
                 <description>Text shown in the browser tooltip when hovering the marker.</description>
@@ -174,6 +182,11 @@
             <property key="viewportHeight" type="integer" defaultValue="0">
                 <caption>Max viewport height (px)</caption>
                 <description>Caps the widget height; content scrolls vertically inside it when zoomed. 0 = 80% of the window height.</description>
+            </property>
+
+            <property key="labelMinZoom" type="integer" defaultValue="0">
+                <caption>Show labels from zoom (%)</caption>
+                <description>Hide marker labels below this zoom level to declutter dense plans. 0 = always show.</description>
             </property>
 
             <property key="showGrid" type="boolean" defaultValue="false">

@@ -1,18 +1,51 @@
-import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
 import { Shape, SHAPE_NAMES, parseShape } from "./components/shapes";
+import { Icon, IconKind } from "./components/icons";
 import "./ui/LayoutOverlay.css";
 
-interface DragState {
-    id: string;
+interface Pos {
     x: number;
     y: number;
+}
+
+interface DragState {
+    ids: string[];
+    start: Record<string, Pos>;
+    p0: Pos;
+    c0: Pos;
+    dx: number;
+    dy: number;
     moved: boolean;
+    toggled: boolean;
+    anchorId: string;
+}
+
+interface Move {
+    item: ObjectItem;
+    x: number;
+    y: number;
+}
+
+interface QueuedMove extends Move {
+    mode: "direct" | "fallback";
+}
+
+interface MarqueeState {
+    fx0: number;
+    fy0: number;
+    fx1: number;
+    fy1: number;
+    cx0: number;
+    cy0: number;
+    additive: boolean;
 }
 
 const num = (v: Big | undefined | null, fallback = 0): number => (v ? Number(v.toString()) : fallback);
+const DRAG_THRESHOLD_PX = 3;
+const nowMs = (): number => Date.now();
 
 export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement {
     const {
@@ -24,6 +57,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         sizeAttr,
         rotationAttr,
         labelAttr,
+        pulseAttr,
         tooltipAttr,
         backgroundImage,
         backgroundUrl,
@@ -32,6 +66,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         canvasHeight,
         defaultSize,
         defaultColor,
+        labelMinZoom,
         showGrid,
         snapSize,
         allowEditing,
@@ -60,9 +95,15 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     const canvasRef = useRef<HTMLDivElement>(null);
     const [editMode, setEditMode] = useState(allowEditing && startInEditMode);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
+    const [marquee, setMarquee] = useState<MarqueeState | null>(null);
+    const marqueeRef = useRef<MarqueeState | null>(null);
+    const [override, setOverride] = useState<Record<string, Pos & { t: number }>>({});
+    const [, setTick] = useState(0);
+    const queueRef = useRef<QueuedMove[]>([]);
+    const inFlightRef = useRef<{ item: ObjectItem; seen: boolean; t: number } | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
     const [lastEvent, setLastEvent] = useState<string | null>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -143,7 +184,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             setHover({
                 id,
                 left: Math.min(Math.max(r.left - root.left + r.width / 2, 90), Math.max(90, root.width - 90)),
-                top: below ? r.bottom - root.top + 6 : r.top - root.top - 6,
+                top: below ? r.bottom - root.top + 8 : r.top - root.top - 8,
                 below
             });
         }, Math.max(0, hoverDelay));
@@ -158,14 +199,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const h = Math.max(1, canvasHeight);
     const maxX = coordMode === "percent" ? 100 : w;
     const maxY = coordMode === "percent" ? 100 : h;
-    const toFracX = (x: number): number => x / maxX;
-    const toFracY = (y: number): number => y / maxY;
 
     const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
 
     const items = markers.items ?? [];
-    const hoverItem = drag || !hover ? undefined : items.find(i => i.id === hover.id);
-    const selected = useMemo(() => items.find(i => i.id === selectedId), [items, selectedId]);
+    const hoverItem = drag?.moved || !hover ? undefined : items.find(i => i.id === hover.id);
+    const selectedItems = items.filter(i => selectedIds.includes(i.id));
+    const single = selectedItems.length === 1 ? selectedItems[0] : undefined;
 
     const clamp = (v: number, max: number): number => Math.min(max, Math.max(0, v));
     const round = (n: number): number => (integerCoords ? Math.round(n) : Math.round(n * 100) / 100);
@@ -177,74 +217,192 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
     };
 
-    const commitPosition = useCallback(
-        (item: ObjectItem, x: number, y: number) => {
-            const xv = xAttr.get(item);
-            const yv = yAttr.get(item);
-            if (xv.readOnly || yv.readOnly) {
-                // Fallback: hand the new coordinates to the page context so a microflow can save them.
-                const mx = movedXAttr;
-                const my = movedYAttr;
-                const action = onMarkerChange?.get(item);
-                const problems: string[] = [];
-                if (!mx || !my) {
-                    problems.push("Moved X / Moved Y are not configured (Editing tab)");
-                } else if (mx.readOnly || my.readOnly) {
-                    problems.push(
-                        "Moved X / Moved Y are read-only or have no object (is the widget inside the data view of that entity, and has it loaded?)"
-                    );
-                }
-                if (!onMarkerChange) {
-                    problems.push('"On marker moved / changed" is not configured (Events tab)');
-                } else if (!action?.canExecute) {
-                    problems.push(
-                        '"On marker moved / changed" cannot execute (microflow parameters such as the context object are not available to the widget)'
-                    );
-                }
-                if (problems.length === 0 && mx && my && action) {
-                    mx.setValue(new Big(round(x)));
-                    my.setValue(new Big(round(y)));
-                    setWarning(null);
-                    setLastEvent(`Moved to (${round(x)}, ${round(y)}) → action called`);
-                    action.execute();
-                } else {
-                    // eslint-disable-next-line no-console
-                    console.warn("[LayoutOverlay] move not saved:", problems);
-                    setWarning(`X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`);
-                    setLastEvent(`Moved to (${round(x)}, ${round(y)}) → NOT saved`);
-                }
+    // Last saved (or optimistically saved) position, ignoring any drag in progress.
+    const basePos = (item: ObjectItem): Pos => {
+        const o = override[item.id];
+        if (o) {
+            return { x: o.x, y: o.y };
+        }
+        return { x: num(xAttr.get(item).value), y: num(yAttr.get(item).value) };
+    };
+
+    // Position currently shown for a marker: live drag > optimistic override > data.
+    const displayPos = (item: ObjectItem): Pos => {
+        const s = drag?.moved ? drag.start[item.id] : undefined;
+        if (drag && s) {
+            return {
+                x: clamp(round(snap(s.x + drag.dx)), maxX),
+                y: clamp(round(snap(s.y + drag.dy)), maxY)
+            };
+        }
+        return basePos(item);
+    };
+
+    // Saves run one marker at a time so the microflow never sees overlapping calls.
+    const processQueue = (): void => {
+        const f = inFlightRef.current;
+        if (f) {
+            const act = onMarkerChange?.get(f.item);
+            if (act?.isExecuting) {
+                f.seen = true;
                 return;
             }
-            setLastEvent(`Moved to (${round(x)}, ${round(y)}) → written to Bay`);
-            setWarning(null);
-            xv.setValue(new Big(round(x)));
-            yv.setValue(new Big(round(y)));
-            run(onMarkerChange?.get(item));
-        },
-        [xAttr, yAttr, movedXAttr, movedYAttr, onMarkerChange, integerCoords]
-    );
+            if (!f.seen && nowMs() - f.t < 500) {
+                return;
+            }
+            inFlightRef.current = null;
+        }
+        while (queueRef.current.length > 0) {
+            const m = queueRef.current.shift()!;
+            const x = round(m.x);
+            const y = round(m.y);
+            if (m.mode === "direct") {
+                xAttr.get(m.item).setValue(new Big(x));
+                yAttr.get(m.item).setValue(new Big(y));
+            } else {
+                movedXAttr?.setValue(new Big(x));
+                movedYAttr?.setValue(new Big(y));
+            }
+            const act = onMarkerChange?.get(m.item);
+            if (act?.canExecute) {
+                act.execute();
+                inFlightRef.current = { item: m.item, seen: false, t: nowMs() };
+                window.setTimeout(() => setTick(t => t + 1), 550);
+                return;
+            }
+        }
+    };
 
-    const pointToCoords = (clientX: number, clientY: number): { x: number; y: number } | null => {
+    useEffect(() => {
+        processQueue();
+    });
+
+    // Drop optimistic positions once the data catches up, or after a grace period.
+    useEffect(() => {
+        const ids = Object.keys(override);
+        if (ids.length === 0) {
+            return undefined;
+        }
+        const busy = queueRef.current.length > 0 || inFlightRef.current !== null;
+        const next = { ...override };
+        let changed = false;
+        ids.forEach(id => {
+            const item = items.find(i => i.id === id);
+            const o = override[id];
+            const matches = item && num(xAttr.get(item).value) === o.x && num(yAttr.get(item).value) === o.y;
+            if (!item || matches || (!busy && nowMs() - o.t > 4000)) {
+                delete next[id];
+                changed = true;
+            }
+        });
+        if (changed) {
+            setOverride(next);
+            return undefined;
+        }
+        const timer = window.setTimeout(() => setTick(t => t + 1), 1000);
+        return () => window.clearTimeout(timer);
+    });
+
+    const commitMoves = (moves: Move[]): void => {
+        const changed = moves.filter(m => {
+            const p = basePos(m.item);
+            return round(m.x) !== p.x || round(m.y) !== p.y;
+        });
+        if (changed.length === 0) {
+            return;
+        }
+        const queued: QueuedMove[] = changed.map(m => ({
+            ...m,
+            mode: xAttr.get(m.item).readOnly || yAttr.get(m.item).readOnly ? "fallback" : "direct"
+        }));
+        if (queued.some(m => m.mode === "fallback")) {
+            const problems: string[] = [];
+            if (!movedXAttr || !movedYAttr) {
+                problems.push("Moved X / Moved Y are not configured (Editing tab)");
+            } else if (movedXAttr.readOnly || movedYAttr.readOnly) {
+                problems.push(
+                    "Moved X / Moved Y are read-only or have no object (is the widget inside the data view of that entity, and has it loaded?)"
+                );
+            }
+            if (!onMarkerChange) {
+                problems.push('"On marker moved / changed" is not configured (Events tab)');
+            } else if (!onMarkerChange.get(queued[0].item).canExecute) {
+                problems.push(
+                    '"On marker moved / changed" cannot execute (microflow parameters such as the context object are not available to the widget)'
+                );
+            }
+            if (problems.length > 0) {
+                // eslint-disable-next-line no-console
+                console.warn("[LayoutOverlay] move not saved:", problems);
+                setWarning(`X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`);
+                setLastEvent(`${queued.length} marker(s) moved → NOT saved`);
+                return;
+            }
+        }
+        setWarning(null);
+        setLastEvent(
+            queued.length === 1
+                ? `Moved to (${round(queued[0].x)}, ${round(queued[0].y)}) → saving`
+                : `${queued.length} markers moved → saving one by one`
+        );
+        const now = nowMs();
+        setOverride(prev => {
+            const next = { ...prev };
+            queued.forEach(m => {
+                next[m.item.id] = { x: round(m.x), y: round(m.y), t: now };
+            });
+            return next;
+        });
+        queueRef.current.push(...queued);
+        processQueue();
+    };
+
+    const clientToCoords = (clientX: number, clientY: number, snapped: boolean): Pos | null => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect || rect.width === 0 || rect.height === 0) {
             return null;
         }
-        return {
-            x: clamp(snap(((clientX - rect.left) / rect.width) * maxX), maxX),
-            y: clamp(snap(((clientY - rect.top) / rect.height) * maxY), maxY)
-        };
+        const x = ((clientX - rect.left) / rect.width) * maxX;
+        const y = ((clientY - rect.top) / rect.height) * maxY;
+        return snapped ? { x: clamp(snap(x), maxX), y: clamp(snap(y), maxY) } : { x, y };
     };
+
+    const toggleSelect = (id: string): void =>
+        setSelectedIds(prev => (prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]));
 
     const onMarkerPointerDown = (e: React.PointerEvent, item: ObjectItem): void => {
         e.stopPropagation();
-        setSelectedId(item.id);
+        const additive = e.shiftKey || e.ctrlKey || e.metaKey;
         if (!editing) {
+            setSelectedIds([item.id]);
+            return;
+        }
+        let ids = selectedIds;
+        if (additive) {
+            toggleSelect(item.id);
+            ids = selectedIds.includes(item.id) ? selectedIds.filter(i => i !== item.id) : [...selectedIds, item.id];
+        } else if (!selectedIds.includes(item.id)) {
+            ids = [item.id];
+            setSelectedIds(ids);
+        }
+        const p0 = clientToCoords(e.clientX, e.clientY, false);
+        if (!p0 || !ids.includes(item.id)) {
             return;
         }
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        const x = num(xAttr.get(item).value);
-        const y = num(yAttr.get(item).value);
-        dragRef.current = { id: item.id, x, y, moved: false };
+        const start: Record<string, Pos> = {};
+        items.filter(i => ids.includes(i.id)).forEach(i => (start[i.id] = displayPos(i)));
+        dragRef.current = {
+            ids,
+            start,
+            p0,
+            c0: { x: e.clientX, y: e.clientY },
+            dx: 0,
+            dy: 0,
+            moved: false,
+            toggled: additive,
+            anchorId: item.id
+        };
         setDrag(dragRef.current);
     };
 
@@ -253,9 +411,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         if (!d) {
             return;
         }
-        const p = pointToCoords(e.clientX, e.clientY);
+        const far = Math.hypot(e.clientX - d.c0.x, e.clientY - d.c0.y) > DRAG_THRESHOLD_PX;
+        if (!d.moved && !far) {
+            return;
+        }
+        const p = clientToCoords(e.clientX, e.clientY, false);
         if (p) {
-            dragRef.current = { ...d, ...p, moved: true };
+            dragRef.current = { ...d, dx: p.x - d.p0.x, dy: p.y - d.p0.y, moved: true };
             setDrag(dragRef.current);
         }
     };
@@ -266,20 +428,41 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         dragRef.current = null;
         setDrag(null);
         if (d?.moved) {
-            commitPosition(item, d.x, d.y);
-        } else {
+            commitMoves(
+                items
+                    .filter(i => d.ids.includes(i.id))
+                    .map(i => {
+                        const s = d.start[i.id];
+                        return { item: i, x: clamp(snap(s.x + d.dx), maxX), y: clamp(snap(s.y + d.dy), maxY) };
+                    })
+            );
+        } else if (!d?.toggled) {
+            if (editing) {
+                setSelectedIds([item.id]);
+            }
             run(onMarkerClick?.get(item));
         }
     };
 
+    const nudgeStep = (): number => snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1);
+
     const onMarkerKeyDown = (e: React.KeyboardEvent, item: ObjectItem): void => {
         if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            setSelectedId(item.id);
+            setSelectedIds([item.id]);
             run(onMarkerClick?.get(item));
             return;
         }
-        const step = e.shiftKey ? 10 : 1;
+        if (e.key === "Escape") {
+            setSelectedIds([]);
+            return;
+        }
+        if (editing && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+            e.preventDefault();
+            setSelectedIds(items.map(i => i.id));
+            return;
+        }
+        const step = (e.shiftKey ? 10 : 1) * nudgeStep();
         const delta: Record<string, [number, number]> = {
             ArrowLeft: [-step, 0],
             ArrowRight: [step, 0],
@@ -289,17 +472,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         const dxy = delta[e.key];
         if (editing && dxy) {
             e.preventDefault();
-            const x = clamp(
-                num(xAttr.get(item).value) +
-                    dxy[0] * (snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1)),
-                maxX
+            const group = selectedIds.includes(item.id) ? selectedItems : [item];
+            commitMoves(
+                group.map(i => {
+                    const p = displayPos(i);
+                    return { item: i, x: clamp(p.x + dxy[0], maxX), y: clamp(p.y + dxy[1], maxY) };
+                })
             );
-            const y = clamp(
-                num(yAttr.get(item).value) +
-                    dxy[1] * (snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1)),
-                maxY
-            );
-            commitPosition(item, x, y);
         }
     };
 
@@ -310,28 +489,47 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             vp.scrollLeft = pan.sl - (e.clientX - pan.x);
             vp.scrollTop = pan.st - (e.clientY - pan.y);
         }
+        const m = marqueeRef.current;
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (m && rect) {
+            marqueeRef.current = {
+                ...m,
+                fx1: Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)),
+                fy1: Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+            };
+            setMarquee(marqueeRef.current);
+        }
     };
 
-    const endPan = (): void => {
+    const onCanvasPointerUp = (e: React.PointerEvent): void => {
         panRef.current = null;
         setPanning(false);
-    };
-
-    const onCanvasPointerDown = (e: React.PointerEvent): void => {
-        setSelectedId(null);
-        if (!editing && allowZoom && e.target === e.currentTarget && viewportRef.current && e.button === 0) {
-            const vp = viewportRef.current;
-            if (vp.scrollWidth > vp.clientWidth || vp.scrollHeight > vp.clientHeight) {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                panRef.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
-                setPanning(true);
-            }
+        const m = marqueeRef.current;
+        marqueeRef.current = null;
+        setMarquee(null);
+        if (!m) {
             return;
         }
-        if (!editing || e.target !== e.currentTarget) {
+        const far = Math.hypot(e.clientX - m.cx0, e.clientY - m.cy0) > 4;
+        if (far) {
+            const xa = Math.min(m.fx0, m.fx1) * maxX;
+            const xb = Math.max(m.fx0, m.fx1) * maxX;
+            const ya = Math.min(m.fy0, m.fy1) * maxY;
+            const yb = Math.max(m.fy0, m.fy1) * maxY;
+            const hit = items
+                .filter(i => {
+                    const p = displayPos(i);
+                    return p.x >= xa && p.x <= xb && p.y >= ya && p.y <= yb;
+                })
+                .map(i => i.id);
+            setSelectedIds(prev => (m.additive ? Array.from(new Set([...prev, ...hit])) : hit));
             return;
         }
-        const p = pointToCoords(e.clientX, e.clientY);
+        // A plain click on empty space: add-marker event with the clicked coordinates.
+        if (!m.additive) {
+            setSelectedIds([]);
+        }
+        const p = clientToCoords(e.clientX, e.clientY, true);
         if (!p) {
             return;
         }
@@ -342,6 +540,91 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             newYAttr.setValue(new Big(round(p.y)));
         }
         run(onCanvasClick);
+    };
+
+    const onCanvasPointerDown = (e: React.PointerEvent): void => {
+        if (e.target !== e.currentTarget || e.button !== 0) {
+            return;
+        }
+        if (!editing) {
+            setSelectedIds([]);
+            const vp = viewportRef.current;
+            if (allowZoom && vp && (vp.scrollWidth > vp.clientWidth || vp.scrollHeight > vp.clientHeight)) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                panRef.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
+                setPanning(true);
+            }
+            return;
+        }
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) {
+            return;
+        }
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const fx = (e.clientX - rect.left) / rect.width;
+        const fy = (e.clientY - rect.top) / rect.height;
+        marqueeRef.current = {
+            fx0: fx,
+            fy0: fy,
+            fx1: fx,
+            fy1: fy,
+            cx0: e.clientX,
+            cy0: e.clientY,
+            additive: e.shiftKey || e.ctrlKey || e.metaKey
+        };
+        setMarquee(marqueeRef.current);
+    };
+
+    const align = (kind: IconKind): void => {
+        if (selectedItems.length < 2) {
+            return;
+        }
+        const pos = selectedItems.map(i => ({ item: i, ...displayPos(i) }));
+        const xs = pos.map(p => p.x);
+        const ys = pos.map(p => p.y);
+        const minX = Math.min(...xs);
+        const maxXv = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxYv = Math.max(...ys);
+        let moves: Move[];
+        switch (kind) {
+            case "left":
+                moves = pos.map(p => ({ item: p.item, x: minX, y: p.y }));
+                break;
+            case "centerX":
+                moves = pos.map(p => ({ item: p.item, x: (minX + maxXv) / 2, y: p.y }));
+                break;
+            case "right":
+                moves = pos.map(p => ({ item: p.item, x: maxXv, y: p.y }));
+                break;
+            case "top":
+                moves = pos.map(p => ({ item: p.item, x: p.x, y: minY }));
+                break;
+            case "middle":
+                moves = pos.map(p => ({ item: p.item, x: p.x, y: (minY + maxYv) / 2 }));
+                break;
+            case "bottom":
+                moves = pos.map(p => ({ item: p.item, x: p.x, y: maxYv }));
+                break;
+            case "distH": {
+                const sorted = [...pos].sort((a, b) => a.x - b.x);
+                moves = sorted.map((p, i) => ({
+                    item: p.item,
+                    x: minX + ((maxXv - minX) * i) / (sorted.length - 1),
+                    y: p.y
+                }));
+                break;
+            }
+            default: {
+                const sorted = [...pos].sort((a, b) => a.y - b.y);
+                moves = sorted.map((p, i) => ({
+                    item: p.item,
+                    x: p.x,
+                    y: minY + ((maxYv - minY) * i) / (sorted.length - 1)
+                }));
+            }
+        }
+        commitMoves(moves);
     };
 
     const setAttr = <T,>(
@@ -360,6 +643,19 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return <div className={`layout-overlay ${props.class}`}>Loading…</div>;
     }
 
+    const alignBtn = (kind: IconKind, title: string, min = 2): ReactElement => (
+        <button
+            type="button"
+            className="layout-overlay__icon-btn"
+            title={title}
+            aria-label={title}
+            disabled={selectedItems.length < min}
+            onClick={() => align(kind)}
+        >
+            <Icon kind={kind} />
+        </button>
+    );
+
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
             {(allowEditing || allowZoom) && (
@@ -368,16 +664,19 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         <button
                             type="button"
                             className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
-                            onClick={() => setEditMode(m => !m)}
+                            onClick={() => {
+                                setEditMode(m => !m);
+                                setSelectedIds([]);
+                            }}
                         >
                             {editMode ? "Editing" : "Edit"}
                         </button>
                     )}
                     {allowZoom && (
-                        <span className="layout-overlay__zoom">
+                        <span className="layout-overlay__group">
                             <button
                                 type="button"
-                                className="layout-overlay__btn"
+                                className="layout-overlay__icon-btn"
                                 title="Zoom out"
                                 onClick={() => zoomTo(zoomRef.current / 1.25)}
                             >
@@ -386,7 +685,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <span className="layout-overlay__zoom-label">{Math.round(zoom * 100)}%</span>
                             <button
                                 type="button"
-                                className="layout-overlay__btn"
+                                className="layout-overlay__icon-btn"
                                 title="Zoom in"
                                 onClick={() => zoomTo(zoomRef.current * 1.25)}
                             >
@@ -394,7 +693,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             </button>
                             <button
                                 type="button"
-                                className="layout-overlay__btn"
+                                className="layout-overlay__btn layout-overlay__btn--flat"
                                 title="Fit to width"
                                 onClick={() => zoomTo(1)}
                             >
@@ -402,7 +701,27 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             </button>
                         </span>
                     )}
-                    {editing && <span>Drag markers · arrow keys nudge · click empty space to add</span>}
+                    {editing && (
+                        <span className="layout-overlay__group" role="group" aria-label="Align selected markers">
+                            {alignBtn("left", "Align left edges (same X)")}
+                            {alignBtn("centerX", "Align horizontal centers (same X)")}
+                            {alignBtn("right", "Align right edges (same X)")}
+                            <span className="layout-overlay__sep" />
+                            {alignBtn("top", "Align tops (same Y, in a row)")}
+                            {alignBtn("middle", "Align vertical middles (same Y, in a row)")}
+                            {alignBtn("bottom", "Align bottoms (same Y, in a row)")}
+                            <span className="layout-overlay__sep" />
+                            {alignBtn("distH", "Distribute horizontally", 3)}
+                            {alignBtn("distV", "Distribute vertically", 3)}
+                        </span>
+                    )}
+                    {editing && (
+                        <span className="layout-overlay__hint">
+                            {selectedItems.length > 0
+                                ? `${selectedItems.length} selected`
+                                : "Drag to move · drag empty space to box-select · Shift+click to add"}
+                        </span>
+                    )}
                     {editing && lastEvent && <span className="layout-overlay__last">{lastEvent}</span>}
                 </div>
             )}
@@ -439,8 +758,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     }}
                     onPointerDown={onCanvasPointerDown}
                     onPointerMove={onCanvasPointerMove}
-                    onPointerUp={endPan}
-                    onPointerCancel={endPan}
+                    onPointerUp={onCanvasPointerUp}
+                    onPointerCancel={onCanvasPointerUp}
                 >
                     {showGrid && (
                         <div
@@ -453,17 +772,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         />
                     )}
                     {items.map(item => {
-                        const isDrag = drag?.id === item.id;
-                        const x = isDrag ? drag.x : num(xAttr.get(item).value);
-                        const y = isDrag ? drag.y : num(yAttr.get(item).value);
+                        const isDrag = !!drag?.moved && drag.ids.includes(item.id);
+                        const { x, y } = displayPos(item);
                         const size = (num(sizeAttr?.get(item).value, defaultSize) || defaultSize) * markerScale;
                         const color = colorAttr?.get(item).value || defaultColor;
                         const label = labelAttr?.get(item).value;
+                        const showLabel = !!label && zoom * 100 >= labelMinZoom;
+                        const pulse = pulseAttr?.get(item).value === true;
                         const cls = [
                             "layout-overlay__marker",
                             editing ? "layout-overlay__marker--edit" : "",
                             isDrag ? "layout-overlay__marker--drag" : "",
-                            selectedId === item.id ? "layout-overlay__marker--selected" : ""
+                            selectedIds.includes(item.id) ? "layout-overlay__marker--selected" : ""
                         ].join(" ");
                         return (
                             <div
@@ -476,7 +796,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         ? undefined
                                         : tooltipAttr?.get(item).value ?? label
                                 }
-                                style={{ left: `${toFracX(x) * 100}%`, top: `${toFracY(y) * 100}%` }}
+                                style={
+                                    {
+                                        left: `${(x / maxX) * 100}%`,
+                                        top: `${(y / maxY) * 100}%`,
+                                        "--lo-color": color
+                                    } as React.CSSProperties
+                                }
                                 onPointerEnter={e => showHover(e, item.id)}
                                 onPointerLeave={hideHover}
                                 onFocus={e => showHover(e, item.id)}
@@ -496,16 +822,30 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 }}
                                 onKeyDown={e => onMarkerKeyDown(e, item)}
                             >
-                                <Shape
-                                    shape={parseShape(shapeAttr?.get(item).value)}
-                                    color={color}
-                                    size={size}
-                                    rotation={num(rotationAttr?.get(item).value)}
-                                />
-                                {label && <span className="layout-overlay__label">{label}</span>}
+                                <span className="layout-overlay__shape-wrap" style={{ width: size, height: size }}>
+                                    {pulse && <span className="layout-overlay__pulse" />}
+                                    <Shape
+                                        shape={parseShape(shapeAttr?.get(item).value)}
+                                        color={color}
+                                        size={size}
+                                        rotation={num(rotationAttr?.get(item).value)}
+                                    />
+                                </span>
+                                {showLabel && <span className="layout-overlay__label">{label}</span>}
                             </div>
                         );
                     })}
+                    {marquee && (
+                        <div
+                            className="layout-overlay__marquee"
+                            style={{
+                                left: `${Math.min(marquee.fx0, marquee.fx1) * 100}%`,
+                                top: `${Math.min(marquee.fy0, marquee.fy1) * 100}%`,
+                                width: `${Math.abs(marquee.fx1 - marquee.fx0) * 100}%`,
+                                height: `${Math.abs(marquee.fy1 - marquee.fy0) * 100}%`
+                            }}
+                        />
+                    )}
                 </div>
             </div>
             {hover && hoverItem && (
@@ -527,37 +867,40 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     })}
                 </div>
             )}
-            {editing && selected && (
+            {editing && single && (
                 <div className="layout-overlay__inspector">
-                    <label>
-                        X{" "}
-                        <input
-                            type="number"
-                            step="any"
-                            value={num(xAttr.get(selected).value)}
-                            onChange={e =>
-                                setAttr(xAttr, selected, new Big(round(clamp(Number(e.target.value) || 0, maxX))))
-                            }
-                        />
-                    </label>
-                    <label>
-                        Y{" "}
-                        <input
-                            type="number"
-                            step="any"
-                            value={num(yAttr.get(selected).value)}
-                            onChange={e =>
-                                setAttr(yAttr, selected, new Big(round(clamp(Number(e.target.value) || 0, maxY))))
-                            }
-                        />
-                    </label>
+                    {(["x", "y"] as const).map(axis => {
+                        const p = displayPos(single);
+                        const max = axis === "x" ? maxX : maxY;
+                        return (
+                            <label key={`${single.id}-${axis}-${p[axis]}`}>
+                                {axis.toUpperCase()}{" "}
+                                <input
+                                    type="number"
+                                    step="any"
+                                    defaultValue={p[axis]}
+                                    onBlur={e => {
+                                        const v = clamp(Number(e.target.value) || 0, max);
+                                        commitMoves([
+                                            { item: single, x: axis === "x" ? v : p.x, y: axis === "y" ? v : p.y }
+                                        ]);
+                                    }}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter") {
+                                            (e.target as HTMLInputElement).blur();
+                                        }
+                                    }}
+                                />
+                            </label>
+                        );
+                    })}
                     {shapeAttr && (
                         <label>
                             Shape{" "}
                             <select
-                                value={shapeAttr.get(selected).value ?? ""}
-                                disabled={shapeAttr.get(selected).readOnly}
-                                onChange={e => setAttr(shapeAttr, selected, e.target.value)}
+                                value={shapeAttr.get(single).value ?? ""}
+                                disabled={shapeAttr.get(single).readOnly}
+                                onChange={e => setAttr(shapeAttr, single, e.target.value)}
                             >
                                 <option value="">circle</option>
                                 {SHAPE_NAMES.map(n => (
@@ -574,12 +917,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <input
                                 type="color"
                                 value={
-                                    /^#[0-9a-f]{6}$/i.test(colorAttr.get(selected).value ?? "")
-                                        ? colorAttr.get(selected).value!
+                                    /^#[0-9a-f]{6}$/i.test(colorAttr.get(single).value ?? "")
+                                        ? colorAttr.get(single).value!
                                         : "#d32f2f"
                                 }
-                                disabled={colorAttr.get(selected).readOnly}
-                                onChange={e => setAttr(colorAttr, selected, e.target.value)}
+                                disabled={colorAttr.get(single).readOnly}
+                                onChange={e => setAttr(colorAttr, single, e.target.value)}
                             />
                         </label>
                     )}
@@ -589,11 +932,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <input
                                 type="number"
                                 min={8}
-                                value={num(sizeAttr.get(selected).value, defaultSize)}
+                                value={num(sizeAttr.get(single).value, defaultSize)}
+                                disabled={sizeAttr.get(single).readOnly}
                                 onChange={e =>
                                     setAttr(
                                         sizeAttr,
-                                        selected,
+                                        single,
                                         new Big(Math.max(8, Number(e.target.value) || defaultSize))
                                     )
                                 }
@@ -605,9 +949,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             Label{" "}
                             <input
                                 type="text"
-                                value={labelAttr.get(selected).value ?? ""}
-                                readOnly={labelAttr.get(selected).readOnly}
-                                onChange={e => setAttr(labelAttr, selected, e.target.value)}
+                                value={labelAttr.get(single).value ?? ""}
+                                readOnly={labelAttr.get(single).readOnly}
+                                onChange={e => setAttr(labelAttr, single, e.target.value)}
                             />
                         </label>
                     )}
