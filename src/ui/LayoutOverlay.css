@@ -196,8 +196,8 @@
     line-height: 1.25;
     white-space: nowrap;
     color: var(--lo-text);
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid var(--lo-border);
+    background: var(--lo-label-bg, rgba(227, 242, 253, 0.92));
+    border: 1px solid var(--lo-label-border, rgba(144, 187, 230, 0.7));
     border-radius: 999px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1);
     pointer-events: none;

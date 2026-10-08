@@ -64,6 +64,7 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 ## Look and feel
 - **Pulse (alert):** Boolean attribute → animated ring on that marker.
 - **Show labels from zoom (%)** hides labels on a dense plan until you zoom in.
+- Label bubbles have a faint light-blue fill; override with `--lo-label-bg` / `--lo-label-border`.
 - Theme with CSS variables on the widget class: `--lo-accent`, `--lo-surface`, `--lo-border`, `--lo-radius`, ...
 
 ## Editing
