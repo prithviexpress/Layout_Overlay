@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useRef, u
 import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
-import { Shape, SHAPE_NAMES, parseShape, shapeAspect } from "./components/shapes";
+import { Shape, SHAPE_NAMES, parseShape, shapeAspect, shapeWidthFactor } from "./components/shapes";
 import { parseBool, parseFilled, parseOrientation, positiveNum } from "./components/orient";
 import { Icon, IconKind } from "./components/icons";
 import "./ui/LayoutOverlay.css";
@@ -778,7 +778,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <Shape
                                 shape={parseShape(l.legendShape)}
                                 color={l.legendColor}
-                                size={l.legendShape.toLowerCase().startsWith("truck") ? 28 : 14}
+                                size={l.legendShape.toLowerCase().startsWith("truck") ? 34 : 14}
                                 rotation={0}
                                 filled={l.legendFilled}
                             />
@@ -836,8 +836,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const scaleX = uniform * positiveNum(scaleXAttr?.get(item).value);
                         const scaleY = uniform * positiveNum(scaleYAttr?.get(item).value);
                         const mirror = parseBool(mirrorAttr?.get(item).value);
-                        const boxW = size * scaleX;
-                        const boxH = size * shapeAspect(shapeDef) * scaleY;
+                        const baseW = size * shapeWidthFactor(shapeDef);
+                        const boxW = baseW * scaleX;
+                        const boxH = baseW * shapeAspect(shapeDef) * scaleY;
                         const rad = (angle * Math.PI) / 180;
                         // Half the rotated extent, so the label clears a rotated icon.
                         const labelOffset = (Math.abs(boxW * Math.sin(rad)) + Math.abs(boxH * Math.cos(rad))) / 2 + 3;
@@ -888,15 +889,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 }}
                                 onKeyDown={e => onMarkerKeyDown(e, item)}
                             >
-                                <span
-                                    className="layout-overlay__shape-wrap"
-                                    style={{ width: size * scaleX, height: size * shapeAspect(shapeDef) * scaleY }}
-                                >
+                                <span className="layout-overlay__shape-wrap" style={{ width: boxW, height: boxH }}>
                                     {pulse && <span className="layout-overlay__pulse" />}
                                     <Shape
                                         shape={shapeDef}
                                         color={color}
-                                        size={size}
+                                        size={baseW}
                                         rotation={angle}
                                         filled={filled}
                                         scaleX={scaleX}

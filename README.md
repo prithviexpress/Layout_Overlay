@@ -12,7 +12,7 @@ A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes
 - custom image: `url:<image url>`
 
 ### Truck icon, fill, scale and orientation
-- **`truck`** is a box truck seen **from above** (cargo box, cab with windshield, wheel pairs on both sides), heading right at 0°. Filled = solid truck, empty = outline.
+- **`truck`** is a container truck seen **from above** (ribbed container, chassis gap, cab with roof and windshield, axle wheels), heading right at 0°. Filled = solid truck, empty = outline. It is about 3:1 long, so its nominal width is 1.6 x the marker Size.
 - **Fill / occupancy** (any shape): Boolean `true`, or text `occupied / filled / yes / busy` → filled; `false`, or `available / empty / outline / no / free` → empty outline. *Default fill* applies when the value is missing. Color comes from the **Color** attribute.
 - **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
