@@ -892,28 +892,37 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const labelOffset = (Math.abs(boxW * Math.sin(rad)) + Math.abs(boxH * Math.cos(rad))) / 2 + 3;
                         // Labels scale with the icons, within a readable range.
                         const labelFont = 11 * Math.min(3, Math.max(0.75, markerScale));
-                        let labelStyle: React.CSSProperties = {
+                        const labelStyle: React.CSSProperties = {
                             top: `calc(50% + ${labelOffset + (labelFont - 11) * 0.6}px)`,
                             fontSize: labelFont
                         };
-                        if (labelOrientation === "follow") {
-                            // Sit beside the icon, perpendicular to its heading, and turn with it (kept readable).
-                            let px = -Math.sin(rad);
-                            let py = Math.cos(rad);
-                            if (py < -0.001 || (Math.abs(py) <= 0.001 && px < 0)) {
-                                px = -px;
-                                py = -py;
+                        // Trucks: the label sits directly behind the rear of the truck, on its axis, running
+                        // away from it (never beside it, never towards the cab) and turned to stay readable.
+                        const rearLabel = labelOrientation === "follow" && shapeDef.kind === "truck";
+                        let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
+                        if (rearLabel) {
+                            const dist = boxW / 2 + 4;
+                            const ax = -Math.cos(rad) * dist;
+                            const ay = -Math.sin(rad) * dist;
+                            let textAngle = (((angle + 180) % 360) + 360) % 360;
+                            let endAnchored = false;
+                            if (textAngle > 90 && textAngle <= 270) {
+                                // Flip so the text is never upside down; its end then touches the truck.
+                                textAngle -= 180;
+                                endAnchored = true;
                             }
-                            const dist = boxH / 2 + labelFont * 0.8 + 3;
-                            let textAngle = ((angle % 360) + 360) % 360;
-                            if (textAngle > 90 && textAngle < 270) {
-                                textAngle += 180;
-                            }
-                            labelStyle = {
-                                left: `calc(50% + ${px * dist}px)`,
-                                top: `calc(50% + ${py * dist}px)`,
-                                transform: `translate(-50%, -50%) rotate(${textAngle}deg)`,
-                                fontSize: labelFont
+                            rearStyle = {
+                                anchor: {
+                                    left: `calc(50% + ${ax}px)`,
+                                    top: `calc(50% + ${ay}px)`,
+                                    transform: `rotate(${textAngle}deg)`
+                                },
+                                text: {
+                                    left: 0,
+                                    top: 0,
+                                    fontSize: labelFont,
+                                    transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`
+                                }
                             };
                         }
                         const lineW = outlineWidth * Math.min(2, Math.max(0.8, markerScale));
@@ -983,11 +992,21 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         mirror={mirror}
                                     />
                                 </span>
-                                {showLabel && (
-                                    <span className="layout-overlay__label" style={labelStyle}>
-                                        {label}
-                                    </span>
-                                )}
+                                {showLabel &&
+                                    (rearStyle ? (
+                                        <span className="layout-overlay__label-anchor" style={rearStyle.anchor}>
+                                            <span
+                                                className="layout-overlay__label layout-overlay__label--rear"
+                                                style={rearStyle.text}
+                                            >
+                                                {label}
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        <span className="layout-overlay__label" style={labelStyle}>
+                                            {label}
+                                        </span>
+                                    ))}
                             </div>
                         );
                     })}

@@ -318,9 +318,9 @@
 
             <property key="labelOrientation" type="enumeration" defaultValue="follow">
                 <caption>Label orientation</caption>
-                <description>Follow: the label turns with the icon and sits beside it along its heading (keeps labels out of the way on tightly packed, rotated bays). Upright: the label stays horizontal below the icon.</description>
+                <description>Follow: for trucks the label sits directly behind the rear of the truck, on its axis (never beside it, never towards the cab) and turns with it so it stays readable; other shapes keep the label below. Upright: the label stays horizontal below the icon.</description>
                 <enumerationValues>
-                    <enumerationValue key="follow">Follow icon orientation</enumerationValue>
+                    <enumerationValue key="follow">Behind the truck rear (turns with it)</enumerationValue>
                     <enumerationValue key="upright">Always upright</enumerationValue>
                 </enumerationValues>
             </property>

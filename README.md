@@ -23,7 +23,7 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
 - **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
-- **Label orientation:** *Follow* (default) turns the label with the icon and puts it beside the icon along its heading, which keeps labels out of the way on tightly packed rotated bays; *Upright* keeps it horizontal below the icon.
+- **Label orientation:** *Behind the truck rear* (default): for trucks the label sits directly behind the rear of the truck, on its axis, running away from it (never beside it, never towards the cab) and turned to stay readable; other shapes keep the label below. *Always upright* keeps it horizontal below the icon.
 - **Outline thickness (px):** line width of empty / not-occupied icons in screen pixels (default 2), constant regardless of scale or zoom. Dotted lines use dots of that width.
 
 ## Events (Mendix actions)

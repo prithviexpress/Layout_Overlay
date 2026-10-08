@@ -276,3 +276,5 @@
 .layout-overlay__status { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -2px 2px 8px; font-size: 12px; }
 .layout-overlay__marker--selected .layout-overlay__shape-wrap::after, .layout-overlay__marker:focus-visible .layout-overlay__shape-wrap::after { border-radius: 999px; }
 .layout-overlay__legend-item .layout-overlay__shape { flex: none; }
+.layout-overlay__label-anchor { position: absolute; width: 0; height: 0; pointer-events: none; }
+.layout-overlay__label--rear { white-space: nowrap; }
