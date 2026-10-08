@@ -43,6 +43,8 @@ export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
 export type LabelOrientationEnum = "follow" | "upright";
 
+export type LabelTextEnum = "along" | "horizontal";
+
 export type LabelSideEnum = "rear" | "cabin";
 
 export type LabelWidthEnum = "match" | "auto";
@@ -119,8 +121,11 @@ export interface LayoutOverlayContainerProps {
     viewportHeight: number;
     labelMinZoom: number;
     labelOrientation: LabelOrientationEnum;
+    labelFontSize: number;
+    labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
     labelWidth: LabelWidthEnum;
+    outlineFill: number;
     outlineWidth: number;
     showGrid: boolean;
     snapSize: number;
@@ -194,8 +199,11 @@ export interface LayoutOverlayPreviewProps {
     viewportHeight: number | null;
     labelMinZoom: number | null;
     labelOrientation: LabelOrientationEnum;
+    labelFontSize: number | null;
+    labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
     labelWidth: LabelWidthEnum;
+    outlineFill: number | null;
     outlineWidth: number | null;
     showGrid: boolean;
     snapSize: number | null;

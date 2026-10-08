@@ -69,6 +69,8 @@ interface ShapeProps {
     dotted?: boolean;
     /** Outline thickness in screen px (does not change with scale or zoom). */
     lineWidth?: number;
+    /** 0..1: how strongly the inside of an outline icon is tinted with its color (0 = see-through). */
+    outlineTint?: number;
     scaleX?: number;
     scaleY?: number;
     mirror?: boolean;
@@ -82,6 +84,7 @@ export function Shape({
     filled = true,
     dotted = false,
     lineWidth = 2,
+    outlineTint = 0.14,
     scaleX = 1,
     scaleY = 1,
     mirror = false
@@ -89,6 +92,15 @@ export function Shape({
     const width = size * scaleX;
     const height = size * shapeAspect(shape) * scaleY;
     // Dotted: round caps on zero-length dashes give dots of the line width, spaced about two widths apart.
+    // A pale tint of the icon's own color keeps outline icons visible over a busy drawing.
+    const tintFill = outlineTint > 0 ? "rgba(255,255,255,0.88)" : "none";
+    const tintStyle =
+        outlineTint > 0
+            ? ({
+                  fill: `color-mix(in srgb, ${color} ${Math.round(outlineTint * 100)}%, white)`,
+                  fillOpacity: 0.95
+              } as React.CSSProperties)
+            : undefined;
     const dash = dotted ? `0.01 ${Math.max(3, lineWidth * 2)}` : undefined;
     const transform = [rotation ? `rotate(${rotation}deg)` : "", mirror ? "scaleX(-1)" : ""].filter(Boolean).join(" ");
     const style = { width, height, transform: transform || undefined };
@@ -125,7 +137,8 @@ export function Shape({
                 ) : (
                     <g
                         className="layout-overlay__outline"
-                        fill="none"
+                        fill={tintFill}
+                        style={tintStyle}
                         stroke={color}
                         strokeWidth={lineWidth}
                         strokeLinejoin="round"
@@ -162,7 +175,8 @@ export function Shape({
                 <g className="layout-overlay__outline">
                     <path
                         d={shape.d}
-                        fill="none"
+                        fill={tintFill}
+                        style={tintStyle}
                         stroke={color}
                         strokeWidth={lineWidth}
                         strokeLinejoin="round"

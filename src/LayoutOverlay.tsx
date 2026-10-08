@@ -79,6 +79,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         labelOrientation,
         labelWidth,
         labelSide,
+        labelText,
+        labelFontSize,
+        outlineFill,
         outlineWidth,
         defaultShape,
         shapeExpr,
@@ -799,11 +802,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                     <Shape
                                         shape={parseShape(l.legendShape)}
                                         color={l.legendColor}
-                                        size={l.legendShape.toLowerCase().startsWith("truck") ? 32 : 14}
+                                        size={l.legendShape.toLowerCase().startsWith("truck") ? 40 : 14}
                                         rotation={0}
                                         filled={l.legendFilled}
                                         dotted={l.legendDotted}
                                         lineWidth={Math.max(1.5, Math.min(outlineWidth, 2.5))}
+                                        outlineTint={outlineFill / 100}
                                     />
                                     {l.legendCaption}
                                 </span>
@@ -893,7 +897,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         // Half the rotated extent, so the label clears a rotated icon.
                         const labelOffset = (Math.abs(boxW * Math.sin(rad)) + Math.abs(boxH * Math.cos(rad))) / 2 + 3;
                         // Labels scale with the icons, within a readable range.
-                        const labelFont = 11 * Math.min(3, Math.max(0.75, markerScale));
+                        const baseLabelFont = Math.max(8, labelFontSize || 12);
+                        const labelFont = baseLabelFont * Math.min(3, Math.max(0.75, markerScale));
                         const labelStyle: React.CSSProperties = {
                             top: `calc(50% + ${labelOffset + (labelFont - 11) * 0.6}px)`,
                             fontSize: labelFont
@@ -903,43 +908,59 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const rearLabel = labelOrientation === "follow" && shapeDef.kind === "truck";
                         let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
                         if (rearLabel) {
-                            const matchWidth = labelWidth === "match";
-                            const thickness = Math.max(10, boxH);
+                            const matchWidth = labelWidth === "match" && labelText !== "horizontal";
+                            // Same width as the truck, but never thinner than the text needs to stay readable.
+                            const thickness = Math.max(10, boxH, labelFont * 1.5);
                             const dist = boxW / 2 + 4;
                             // Side of the truck the label sits on: behind the rear, or in front of the cabin.
                             const away = labelSide === "cabin" ? angle : angle + 180;
                             const awayRad = (away * Math.PI) / 180;
-                            const ax = Math.cos(awayRad) * dist;
-                            const ay = Math.sin(awayRad) * dist;
-                            let textAngle = ((away % 360) + 360) % 360;
-                            let endAnchored = false;
-                            if (textAngle > 90 && textAngle <= 270) {
-                                // Flip so the text is never upside down; its end then touches the truck.
-                                textAngle -= 180;
-                                endAnchored = true;
-                            }
-                            rearStyle = {
-                                anchor: {
-                                    left: `calc(50% + ${ax}px)`,
-                                    top: `calc(50% + ${ay}px)`,
-                                    transform: `rotate(${textAngle}deg)`
-                                },
-                                text: {
-                                    left: 0,
-                                    top: 0,
-                                    fontSize: matchWidth ? Math.min(labelFont, thickness * 0.75) : labelFont,
-                                    transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
-                                    // Same width as the truck: the bubble is exactly as thick as the truck body.
-                                    ...(matchWidth
-                                        ? {
-                                              boxSizing: "border-box" as const,
-                                              height: thickness,
-                                              lineHeight: `${thickness - 2}px`,
-                                              padding: "0 0.6em"
-                                          }
-                                        : {})
+                            const ux = Math.cos(awayRad);
+                            const uy = Math.sin(awayRad);
+                            if (labelText === "horizontal") {
+                                // Horizontal text: the bubble's near edge touches the truck's end, on its axis.
+                                rearStyle = {
+                                    anchor: {
+                                        left: `calc(50% + ${ux * dist}px)`,
+                                        top: `calc(50% + ${uy * dist}px)`
+                                    },
+                                    text: {
+                                        left: 0,
+                                        top: 0,
+                                        fontSize: labelFont,
+                                        transform: `translate(${-50 + ux * 50}%, ${-50 + uy * 50}%)`
+                                    }
+                                };
+                            } else {
+                                let textAngle = ((away % 360) + 360) % 360;
+                                let endAnchored = false;
+                                if (textAngle > 90 && textAngle <= 270) {
+                                    // Flip so the text is never upside down; its end then touches the truck.
+                                    textAngle -= 180;
+                                    endAnchored = true;
                                 }
-                            };
+                                rearStyle = {
+                                    anchor: {
+                                        left: `calc(50% + ${ux * dist}px)`,
+                                        top: `calc(50% + ${uy * dist}px)`,
+                                        transform: `rotate(${textAngle}deg)`
+                                    },
+                                    text: {
+                                        left: 0,
+                                        top: 0,
+                                        fontSize: labelFont,
+                                        transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
+                                        ...(matchWidth
+                                            ? {
+                                                  boxSizing: "border-box" as const,
+                                                  height: thickness,
+                                                  lineHeight: `${thickness - 2}px`,
+                                                  padding: "0 0.6em"
+                                              }
+                                            : {})
+                                    }
+                                };
+                            }
                         }
                         const lineW = outlineWidth * Math.min(2, Math.max(0.8, markerScale));
                         const color = colorAttr?.get(item).value || defaultColor;
@@ -1003,6 +1024,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         filled={filled}
                                         dotted={dotted}
                                         lineWidth={lineW}
+                                        outlineTint={outlineFill / 100}
                                         scaleX={scaleX}
                                         scaleY={scaleY}
                                         mirror={mirror}

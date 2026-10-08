@@ -24,6 +24,8 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
 - **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
 - **Label orientation:** *Behind the truck rear* (default): for trucks the label sits directly behind the rear of the truck, on its axis, running away from it (never beside it, never towards the cab) and turned to stay readable; other shapes keep the label below. *Always upright* keeps it horizontal below the icon.
+- **Label font size (px)** (default 12) is independent of how thin the icon is; the bubble is as thick as the truck but never thinner than the text needs. **Truck label text:** *Along the truck* (default, compact) or *Always horizontal* (easiest to read; the bubble can be wider than the truck and touches the truck's end).
+- **Outline tint (%)** (default 14) fills the inside of empty / not-occupied icons with a pale tint of their color so they stay visible over a busy drawing.
 - **Truck label side:** *Rear* (default) puts the label behind the container; *Cabin* puts it in front of the cab. Either way it is on the truck's axis, never beside it.
 - **Truck label width:** *Same width as the truck* (default) makes the label bubble exactly as thick as the truck body, with the text sized to fit; *Fit to text* sizes the bubble to its text.
 - **Outline thickness (px):** line width of empty / not-occupied icons in screen pixels (default 2), constant regardless of scale or zoom. Dotted lines use dots of that width.

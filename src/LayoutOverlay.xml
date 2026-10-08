@@ -325,6 +325,20 @@
                 </enumerationValues>
             </property>
 
+            <property key="labelFontSize" type="integer" defaultValue="12">
+                <caption>Label font size (px)</caption>
+                <description>Base label text size in px at 100% zoom; it scales with zoom and no longer depends on how thin the icon is. Raise it if labels are hard to read.</description>
+            </property>
+
+            <property key="labelText" type="enumeration" defaultValue="along">
+                <caption>Truck label text</caption>
+                <description>Along the truck: the text turns with the truck (compact, good for tightly packed bays). Horizontal: the text is always horizontal (easiest to read) and the bubble touches the truck's end; it can be wider than the truck.</description>
+                <enumerationValues>
+                    <enumerationValue key="along">Along the truck</enumerationValue>
+                    <enumerationValue key="horizontal">Always horizontal</enumerationValue>
+                </enumerationValues>
+            </property>
+
             <property key="labelSide" type="enumeration" defaultValue="rear">
                 <caption>Truck label side</caption>
                 <description>Which end of the truck the label sits at, on the truck's axis: behind the rear (default) or in front of the cabin. Applies when Label orientation is "Turns with the truck".</description>
@@ -341,6 +355,11 @@
                     <enumerationValue key="match">Same width as the truck</enumerationValue>
                     <enumerationValue key="auto">Fit to text</enumerationValue>
                 </enumerationValues>
+            </property>
+
+            <property key="outlineFill" type="integer" defaultValue="14">
+                <caption>Outline tint (%)</caption>
+                <description>How strongly the inside of empty / not-occupied icons is tinted with their color (a pale fill that keeps them visible over a busy drawing). 0 = see-through.</description>
             </property>
 
             <property key="outlineWidth" type="integer" defaultValue="2">
