@@ -22,6 +22,8 @@ export type DefaultFillEnum = "filled" | "outline";
 
 export type OccupiedStyleEnum = "outline" | "filled";
 
+export type ZoomWheelEnum = "ctrl" | "wheel";
+
 export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
 export interface HoverLinesType {
@@ -85,6 +87,7 @@ export interface LayoutOverlayContainerProps {
     occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;
     allowZoom: boolean;
+    zoomWheel: ZoomWheelEnum;
     minZoom: number;
     maxZoom: number;
     initialZoom: number;
@@ -95,6 +98,7 @@ export interface LayoutOverlayContainerProps {
     snapSize: number;
     allowEditing: boolean;
     startInEditMode: boolean;
+    clickWhileEditing: boolean;
     newXAttr?: EditableValue<Big>;
     newYAttr?: EditableValue<Big>;
     movedXAttr?: EditableValue<Big>;
@@ -151,6 +155,7 @@ export interface LayoutOverlayPreviewProps {
     occupiedStyle: OccupiedStyleEnum;
     defaultColor: string;
     allowZoom: boolean;
+    zoomWheel: ZoomWheelEnum;
     minZoom: number | null;
     maxZoom: number | null;
     initialZoom: number | null;
@@ -161,6 +166,7 @@ export interface LayoutOverlayPreviewProps {
     snapSize: number | null;
     allowEditing: boolean;
     startInEditMode: boolean;
+    clickWhileEditing: boolean;
     newXAttr: string;
     newYAttr: string;
     movedXAttr: string;

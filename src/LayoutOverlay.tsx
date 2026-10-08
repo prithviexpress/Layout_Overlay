@@ -85,6 +85,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         movedXAttr,
         integerCoords,
         allowZoom,
+        zoomWheel,
+        clickWhileEditing,
         minZoom,
         maxZoom,
         initialZoom,
@@ -185,22 +187,29 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         anchorRef.current = null;
     }, [zoom]);
 
+    // The viewport only exists once the data source has loaded, so re-attach when that changes.
+    const wheelZoom = zoomWheel === "wheel";
+    const loading = markers.status === "loading" && (markers.items ?? []).length === 0;
+
     useEffect(() => {
         const vp = viewportRef.current;
         if (!vp || !allowZoom) {
             return undefined;
         }
         const onWheel = (e: WheelEvent): void => {
-            if (!(e.ctrlKey || e.metaKey)) {
+            const pinchOrCtrl = e.ctrlKey || e.metaKey;
+            const zooms = wheelZoom ? pinchOrCtrl || !e.shiftKey : pinchOrCtrl;
+            if (!zooms) {
                 return;
             }
             e.preventDefault();
             const rect = vp.getBoundingClientRect();
-            zoomTo(zoomRef.current * Math.exp(-e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+            const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+            zoomTo(zoomRef.current * Math.exp(-dy * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
         };
         vp.addEventListener("wheel", onWheel, { passive: false });
         return () => vp.removeEventListener("wheel", onWheel);
-    }, [allowZoom, zoomTo]);
+    }, [allowZoom, wheelZoom, zoomTo, loading]);
 
     const rootRef = useRef<HTMLDivElement>(null);
     const hoverTimer = useRef<number | undefined>(undefined);
@@ -475,7 +484,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             if (editing) {
                 setSelectedIds([item.id]);
             }
-            run(onMarkerClick?.get(item));
+            if (!editing || clickWhileEditing) {
+                run(onMarkerClick?.get(item));
+            }
         }
     };
 
@@ -485,7 +496,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             setSelectedIds([item.id]);
-            run(onMarkerClick?.get(item));
+            if (!editing || clickWhileEditing) {
+                run(onMarkerClick?.get(item));
+            }
             return;
         }
         if (e.key === "Escape") {
@@ -578,7 +591,19 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     };
 
     const onCanvasPointerDown = (e: React.PointerEvent): void => {
-        if (e.target !== e.currentTarget || e.button !== 0) {
+        if (e.target !== e.currentTarget) {
+            return;
+        }
+        const vpEl = viewportRef.current;
+        if (e.button === 1 && vpEl) {
+            // Middle mouse button pans in any mode.
+            e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            panRef.current = { x: e.clientX, y: e.clientY, sl: vpEl.scrollLeft, st: vpEl.scrollTop };
+            setPanning(true);
+            return;
+        }
+        if (e.button !== 0) {
             return;
         }
         if (!editing) {
@@ -674,7 +699,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
     };
 
-    if (markers.status === "loading" && items.length === 0) {
+    if (loading) {
         return <div className={`layout-overlay ${props.class}`}>Loading…</div>;
     }
 
@@ -693,13 +718,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {titleText?.value && (
-                <div className="layout-overlay__title" style={{ textAlign: titleAlign }}>
-                    {titleText.value}
-                </div>
-            )}
-            {(allowEditing || allowZoom) && (
-                <div className="layout-overlay__toolbar">
+            {(allowEditing || allowZoom || !!titleText?.value || legendItems.length > 0) && (
+                <div className={`layout-overlay__toolbar layout-overlay__toolbar--title-${titleAlign}`}>
+                    {titleText?.value && <span className="layout-overlay__title">{titleText.value}</span>}
                     {allowEditing && (
                         <button
                             type="button"
@@ -763,31 +784,33 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             {alignBtn("distV", "Distribute vertically", 3)}
                         </span>
                     )}
-                    {editing && (
-                        <span className="layout-overlay__hint">
-                            {selectedItems.length > 0
-                                ? `${selectedItems.length} selected`
-                                : "Drag to move · drag empty space to box-select · Shift+click to add"}
-                        </span>
+                    {legendItems.length > 0 && (
+                        <div className="layout-overlay__legend">
+                            {legendItems.slice(0, 6).map((l, i) => (
+                                <span key={i} className="layout-overlay__legend-item">
+                                    <Shape
+                                        shape={parseShape(l.legendShape)}
+                                        color={l.legendColor}
+                                        size={l.legendShape.toLowerCase().startsWith("truck") ? 32 : 14}
+                                        rotation={0}
+                                        filled={l.legendFilled}
+                                        dotted={l.legendDotted}
+                                    />
+                                    {l.legendCaption}
+                                </span>
+                            ))}
+                        </div>
                     )}
-                    {editing && lastEvent && <span className="layout-overlay__last">{lastEvent}</span>}
                 </div>
             )}
-            {legendItems.length > 0 && (
-                <div className="layout-overlay__legend">
-                    {legendItems.slice(0, 6).map((l, i) => (
-                        <span key={i} className="layout-overlay__legend-item">
-                            <Shape
-                                shape={parseShape(l.legendShape)}
-                                color={l.legendColor}
-                                size={l.legendShape.toLowerCase().startsWith("truck") ? 32 : 14}
-                                rotation={0}
-                                filled={l.legendFilled}
-                                dotted={l.legendDotted}
-                            />
-                            {l.legendCaption}
-                        </span>
-                    ))}
+            {editing && (
+                <div className="layout-overlay__status">
+                    <span className="layout-overlay__hint">
+                        {selectedItems.length > 0
+                            ? `${selectedItems.length} selected`
+                            : "Drag to move · drag empty space to box-select · Shift+click to add · middle button pans"}
+                    </span>
+                    {lastEvent && <span className="layout-overlay__last">{lastEvent}</span>}
                 </div>
             )}
             {warning && (
@@ -889,9 +912,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 }}
                                 onPointerMove={onMarkerPointerMove}
                                 onPointerUp={e => onMarkerPointerUp(e, item)}
-                                onDoubleClick={() => run(onMarkerDoubleClick?.get(item))}
+                                onDoubleClick={() => {
+                                    if (!editing || clickWhileEditing) {
+                                        run(onMarkerDoubleClick?.get(item));
+                                    }
+                                }}
                                 onContextMenu={e => {
-                                    if (onMarkerContextMenu?.get(item).canExecute) {
+                                    if ((!editing || clickWhileEditing) && onMarkerContextMenu?.get(item).canExecute) {
                                         e.preventDefault();
                                         run(onMarkerContextMenu.get(item));
                                     }

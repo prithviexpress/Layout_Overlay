@@ -240,6 +240,15 @@
                 <description>Ctrl + mouse wheel zooms in and out around the cursor. Scroll and Shift + scroll pan; dragging empty space pans when not editing. Adds zoom buttons.</description>
             </property>
 
+            <property key="zoomWheel" type="enumeration" defaultValue="ctrl">
+                <caption>Mouse wheel zoom</caption>
+                <description>Ctrl + wheel: hold Ctrl (or Cmd) and scroll to zoom; plain scroll scrolls the page. Wheel: the wheel alone zooms around the cursor (hold Shift to scroll sideways). Middle mouse button, or dragging empty space when not editing, pans.</description>
+                <enumerationValues>
+                    <enumerationValue key="ctrl">Ctrl + wheel</enumerationValue>
+                    <enumerationValue key="wheel">Wheel only</enumerationValue>
+                </enumerationValues>
+            </property>
+
             <property key="minZoom" type="integer" defaultValue="50">
                 <caption>Minimum zoom (%)</caption>
                 <description>100 = canvas fits the widget width.</description>
@@ -297,6 +306,11 @@
             <property key="startInEditMode" type="boolean" defaultValue="false">
                 <caption>Start in edit mode</caption>
                 <description>Open the widget with editing already switched on.</description>
+            </property>
+
+            <property key="clickWhileEditing" type="boolean" defaultValue="false">
+                <caption>Fire click events while editing</caption>
+                <description>Off (default): marker click, double click and right click actions run only when Edit is off; while editing, a click just selects the marker. On: they also run while editing.</description>
             </property>
 
             <property key="newXAttr" type="attribute" required="false">
@@ -410,7 +424,7 @@
 
             <property key="titleAlign" type="enumeration" defaultValue="center">
                 <caption>Title alignment</caption>
-                <description>Horizontal alignment of the title.</description>
+                <description>Where the title sits in the toolbar: left (before the buttons), center (between the buttons and the legend) or right (after the legend).</description>
                 <enumerationValues>
                     <enumerationValue key="left">Left</enumerationValue>
                     <enumerationValue key="center">Center</enumerationValue>

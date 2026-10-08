@@ -21,6 +21,8 @@ A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes
 - Labels stay upright and clear rotated icons.
 
 ## Events (Mendix actions)
+*Marker click, double click and right click run only while **Edit is off** (while editing a click just selects). Turn on **Fire click events while editing** to change that. **On marker moved / changed** only runs after a move or change made in edit mode.*
+
 | Property | When |
 |---|---|
 | On marker click | click / Enter on a marker (receives that marker object) |
@@ -36,11 +38,12 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 
 ## Hover card and legend
 - **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
-- **Title:** heading above the plan (text template, left / center / right).
+- **Title:** shown in the same toolbar as Edit / zoom / legend (text template; left, center or right of the bar).
 - **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
 ## Zoom and scroll
-- **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac); toolbar has − / + / Fit.
+- **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac, or trackpad pinch); *Mouse wheel zoom = Wheel only* makes the wheel alone zoom (Shift+wheel scrolls sideways). Toolbar has − / + / Fit width / Fit page.
+- **Middle mouse button** pans in any mode.
 - Scroll and **Shift + scroll** pan; dragging empty space pans when not editing.
 - **Marker scaling:** Fixed (pixel size), Smooth (grows with the square root of zoom, default) or Proportional (scales exactly with the plan).
 - **Fit width** fills the widget width (scroll vertically if taller); **Fit page** shows the whole plan at once, even below the minimum zoom.
