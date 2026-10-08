@@ -325,6 +325,15 @@
                 </enumerationValues>
             </property>
 
+            <property key="labelWidth" type="enumeration" defaultValue="match">
+                <caption>Truck label width</caption>
+                <description>Same width as the truck: the label bubble behind a truck is exactly as thick as the truck body (text is sized to fit). Fit to text: the bubble is only as big as its text.</description>
+                <enumerationValues>
+                    <enumerationValue key="match">Same width as the truck</enumerationValue>
+                    <enumerationValue key="auto">Fit to text</enumerationValue>
+                </enumerationValues>
+            </property>
+
             <property key="outlineWidth" type="integer" defaultValue="2">
                 <caption>Outline thickness (px)</caption>
                 <description>Line thickness of outline (empty / not occupied) icons, in screen pixels. Dotted lines use dots of this width, so raise it if they are hard to see.</description>

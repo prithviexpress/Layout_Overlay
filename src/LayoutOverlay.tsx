@@ -77,6 +77,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         canvasHeight,
         defaultSize,
         labelOrientation,
+        labelWidth,
         outlineWidth,
         defaultShape,
         shapeExpr,
@@ -901,6 +902,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const rearLabel = labelOrientation === "follow" && shapeDef.kind === "truck";
                         let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
                         if (rearLabel) {
+                            const matchWidth = labelWidth === "match";
+                            const thickness = Math.max(10, boxH);
                             const dist = boxW / 2 + 4;
                             const ax = -Math.cos(rad) * dist;
                             const ay = -Math.sin(rad) * dist;
@@ -920,8 +923,17 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 text: {
                                     left: 0,
                                     top: 0,
-                                    fontSize: labelFont,
-                                    transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`
+                                    fontSize: matchWidth ? Math.min(labelFont, thickness * 0.75) : labelFont,
+                                    transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
+                                    // Same width as the truck: the bubble is exactly as thick as the truck body.
+                                    ...(matchWidth
+                                        ? {
+                                              boxSizing: "border-box" as const,
+                                              height: thickness,
+                                              lineHeight: `${thickness - 2}px`,
+                                              padding: "0 0.6em"
+                                          }
+                                        : {})
                                 }
                             };
                         }

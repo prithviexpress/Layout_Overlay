@@ -43,6 +43,8 @@ export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
 export type LabelOrientationEnum = "follow" | "upright";
 
+export type LabelWidthEnum = "match" | "auto";
+
 export interface HoverLinesType {
     text: ListExpressionValue<string>;
     bold: boolean;
@@ -115,6 +117,7 @@ export interface LayoutOverlayContainerProps {
     viewportHeight: number;
     labelMinZoom: number;
     labelOrientation: LabelOrientationEnum;
+    labelWidth: LabelWidthEnum;
     outlineWidth: number;
     showGrid: boolean;
     snapSize: number;
@@ -188,6 +191,7 @@ export interface LayoutOverlayPreviewProps {
     viewportHeight: number | null;
     labelMinZoom: number | null;
     labelOrientation: LabelOrientationEnum;
+    labelWidth: LabelWidthEnum;
     outlineWidth: number | null;
     showGrid: boolean;
     snapSize: number | null;
