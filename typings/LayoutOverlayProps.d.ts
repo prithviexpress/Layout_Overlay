@@ -121,6 +121,7 @@ export interface LayoutOverlayContainerProps {
     viewportHeight: number;
     labelMinZoom: number;
     labelOrientation: LabelOrientationEnum;
+    labelFontFamily: string;
     labelFontSize: number;
     labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
@@ -130,6 +131,7 @@ export interface LayoutOverlayContainerProps {
     showGrid: boolean;
     snapSize: number;
     allowEditing: boolean;
+    canEditExpr?: DynamicValue<boolean>;
     startInEditMode: boolean;
     clickWhileEditing: boolean;
     newXAttr?: EditableValue<Big>;
@@ -201,6 +203,7 @@ export interface LayoutOverlayPreviewProps {
     viewportHeight: number | null;
     labelMinZoom: number | null;
     labelOrientation: LabelOrientationEnum;
+    labelFontFamily: string;
     labelFontSize: number | null;
     labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
@@ -210,6 +213,7 @@ export interface LayoutOverlayPreviewProps {
     showGrid: boolean;
     snapSize: number | null;
     allowEditing: boolean;
+    canEditExpr: string;
     startInEditMode: boolean;
     clickWhileEditing: boolean;
     newXAttr: string;

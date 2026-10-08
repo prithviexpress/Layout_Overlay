@@ -325,6 +325,11 @@
                 </enumerationValues>
             </property>
 
+            <property key="labelFontFamily" type="string" required="false">
+                <caption>Label font</caption>
+                <description>Optional CSS font family for labels and the title, e.g. Segoe UI, Arial or Verdana. Empty = a clean system font (Segoe UI on Windows). Only fonts installed on the user's computer or already loaded by your theme can be used.</description>
+            </property>
+
             <property key="labelFontSize" type="integer" defaultValue="12">
                 <caption>Label font size (px)</caption>
                 <description>Base label text size in px at 100% zoom; it scales with zoom and no longer depends on how thin the icon is. Raise it if labels are hard to read.</description>
@@ -384,6 +389,12 @@
             <property key="allowEditing" type="boolean" defaultValue="true">
                 <caption>Allow editing</caption>
                 <description>Show an Edit toggle. In edit mode markers can be dragged, nudged with arrow keys, and the selected marker's shape/color/size/position can be changed (when attributes are editable).</description>
+            </property>
+
+            <property key="canEditExpr" type="expression" required="false">
+                <caption>Edit allowed (expression)</caption>
+                <description>Optional. A Boolean expression deciding who sees the Edit button, e.g. an attribute of the page context that is true for administrators. Empty = everyone sees Edit (while Allow editing is on). The button stays hidden while the expression is loading or false. This only hides the UI; also check the role in the "On marker moved / changed" microflow, because the browser is not a security boundary.</description>
+                <returnType type="Boolean" />
             </property>
 
             <property key="startInEditMode" type="boolean" defaultValue="false">

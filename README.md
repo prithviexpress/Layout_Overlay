@@ -24,6 +24,7 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
 - **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
 - **Label orientation:** *Behind the truck rear* (default): for trucks the label sits directly behind the rear of the truck, on its axis, running away from it (never beside it, never towards the cab) and turned to stay readable; other shapes keep the label below. *Always upright* keeps it horizontal below the icon.
+- **Label font** defaults to a clean system font (Segoe UI on Windows) with tabular digits; set *Label font* to override (installed or theme-loaded fonts only). Vertical labels use the browser's native vertical text and whole-pixel positions so they stay sharp.
 - **Label font size (px)** (default 12) is independent of how thin the icon is; the bubble is as thick as the truck but never thinner than the text needs. **Truck label text:** *Along the truck* (default, compact) or *Always horizontal* (easiest to read; the bubble can be wider than the truck and touches the truck's end).
 - **Outline tint (%)** (default 14) fills the inside of empty / not-occupied icons with a pale tint of their color so they stay visible over a busy drawing.
 - **Truck label side:** *Rear* (default) puts the label behind the container; *Cabin* puts it in front of the cab. Either way it is on the truck's axis, never beside it.
@@ -70,6 +71,9 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Show labels from zoom (%)** hides labels on a dense plan until you zoom in.
 - Label bubbles have a faint light-blue fill; override with `--lo-label-bg` / `--lo-label-border`.
 - Theme with CSS variables on the widget class: `--lo-accent`, `--lo-surface`, `--lo-border`, `--lo-radius`, ...
+
+## Who can edit
+Set **Editing → Edit allowed (expression)** to a Boolean expression (for example an attribute on the page context that is true for administrators). The Edit button is shown only while it evaluates to true (hidden while loading or false); empty = everyone, as long as *Allow editing* is on. This only hides the UI: also check the user's role in the *On marker moved / changed* microflow. Alternative without an expression: place two widget instances in containers with *Visibility → module roles* (one with *Allow editing* on for admins, one off for everyone else).
 
 ## Editing
 Toggle **Edit**: drag markers, arrow keys nudge (Shift = x10), inspector changes X/Y/shape/color/size/label. Optional grid + snap.

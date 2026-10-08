@@ -91,6 +91,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         showGrid,
         snapSize,
         allowEditing,
+        canEditExpr,
+        labelFontFamily,
         startInEditMode,
         newXAttr,
         movedXAttr,
@@ -121,7 +123,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     } = props;
 
     const canvasRef = useRef<HTMLDivElement>(null);
-    const [editMode, setEditMode] = useState(allowEditing && startInEditMode);
+    // Edit is offered only when allowed in the widget AND, if an expression is set, when it evaluates to true for this user.
+    const canEdit = allowEditing && (canEditExpr ? canEditExpr.value === true : true);
+    const [editMode, setEditMode] = useState(startInEditMode);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
@@ -253,7 +257,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         setHover(null);
     };
 
-    const editing = allowEditing && editMode;
+    const editing = canEdit && editMode;
     const w = Math.max(1, canvasWidth);
     const h = Math.max(1, canvasHeight);
     const maxX = coordMode === "percent" ? 100 : w;
@@ -733,10 +737,10 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {(allowEditing || allowZoom || !!titleValue || legendItems.length > 0) && (
+            {(canEdit || allowZoom || !!titleValue || legendItems.length > 0) && (
                 <div className={`layout-overlay__toolbar layout-overlay__toolbar--title-${titleAlign}`}>
                     {titleValue && <span className="layout-overlay__title">{titleValue}</span>}
-                    {allowEditing && (
+                    {canEdit && (
                         <button
                             type="button"
                             className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
@@ -903,9 +907,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         // Labels scale with the icons, within a readable range.
                         const baseLabelFont = Math.max(8, labelFontSize || 12);
                         const labelFont = baseLabelFont * Math.min(3, Math.max(0.75, markerScale));
+                        const fontFamily = labelFontFamily || undefined;
                         const labelStyle: React.CSSProperties = {
                             top: `calc(50% + ${labelOffset + (labelFont - 11) * 0.6}px)`,
-                            fontSize: labelFont
+                            fontSize: labelFont,
+                            fontFamily
                         };
                         // Trucks: the label sits on the truck's axis, behind the rear (default) or in front of the
                         // cabin, running away from the truck (never beside it) and turned to stay readable.
@@ -913,25 +919,28 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
                         if (rearLabel) {
                             const matchWidth = labelWidth === "match" && labelText !== "horizontal";
-                            // Same width as the truck, but never thinner than the text needs to stay readable.
-                            const thickness = Math.max(10, boxH, labelFont * 1.5);
+                            // Same width as the truck, but never thinner than the text needs; even px keeps text crisp.
+                            const thickness = Math.ceil(Math.max(10, boxH, labelFont * 1.5) / 2) * 2;
                             const dist = boxW / 2 + 4;
                             // Side of the truck the label sits on: behind the rear, or in front of the cabin.
                             const away = labelSide === "cabin" ? angle : angle + 180;
                             const awayRad = (away * Math.PI) / 180;
                             const ux = Math.cos(awayRad);
                             const uy = Math.sin(awayRad);
+                            // Whole pixels only: fractional positions make small text look blurry.
+                            const anchorAt = {
+                                left: `calc(50% + ${Math.round(ux * dist)}px)`,
+                                top: `calc(50% + ${Math.round(uy * dist)}px)`
+                            };
                             if (labelText === "horizontal") {
                                 // Horizontal text: the bubble's near edge touches the truck's end, on its axis.
                                 rearStyle = {
-                                    anchor: {
-                                        left: `calc(50% + ${ux * dist}px)`,
-                                        top: `calc(50% + ${uy * dist}px)`
-                                    },
+                                    anchor: anchorAt,
                                     text: {
                                         left: 0,
                                         top: 0,
                                         fontSize: labelFont,
+                                        fontFamily,
                                         transform: `translate(${-50 + ux * 50}%, ${-50 + uy * 50}%)`
                                     }
                                 };
@@ -943,27 +952,59 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                     textAngle -= 180;
                                     endAnchored = true;
                                 }
-                                rearStyle = {
-                                    anchor: {
-                                        left: `calc(50% + ${ux * dist}px)`,
-                                        top: `calc(50% + ${uy * dist}px)`,
-                                        transform: `rotate(${textAngle}deg)`
-                                    },
-                                    text: {
-                                        left: 0,
-                                        top: 0,
-                                        fontSize: labelFont,
-                                        transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
-                                        ...(matchWidth
-                                            ? {
-                                                  boxSizing: "border-box" as const,
-                                                  height: thickness,
-                                                  lineHeight: `${thickness - 2}px`,
-                                                  padding: "0 0.6em"
-                                              }
-                                            : {})
-                                    }
-                                };
+                                const near = (v: number): boolean => Math.abs(textAngle - v) < 0.01;
+                                if (near(0) || near(90)) {
+                                    // Exactly horizontal or vertical: no rotation transform, so text stays crisp
+                                    // (vertical uses the browser's native vertical writing mode).
+                                    const vertical = near(90);
+                                    rearStyle = {
+                                        anchor: anchorAt,
+                                        text: {
+                                            left: 0,
+                                            top: 0,
+                                            fontSize: labelFont,
+                                            fontFamily,
+                                            ...(vertical ? { writingMode: "vertical-rl" as const } : {}),
+                                            transform: vertical
+                                                ? `translate(-50%, ${endAnchored ? "-100%" : "0"})`
+                                                : `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
+                                            ...(matchWidth
+                                                ? vertical
+                                                    ? {
+                                                          boxSizing: "border-box" as const,
+                                                          width: thickness,
+                                                          lineHeight: `${thickness - 2}px`,
+                                                          padding: "0.6em 0"
+                                                      }
+                                                    : {
+                                                          boxSizing: "border-box" as const,
+                                                          height: thickness,
+                                                          lineHeight: `${thickness - 2}px`,
+                                                          padding: "0 0.6em"
+                                                      }
+                                                : {})
+                                        }
+                                    };
+                                } else {
+                                    rearStyle = {
+                                        anchor: { ...anchorAt, transform: `rotate(${textAngle}deg)` },
+                                        text: {
+                                            left: 0,
+                                            top: 0,
+                                            fontSize: labelFont,
+                                            fontFamily,
+                                            transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
+                                            ...(matchWidth
+                                                ? {
+                                                      boxSizing: "border-box" as const,
+                                                      height: thickness,
+                                                      lineHeight: `${thickness - 2}px`,
+                                                      padding: "0 0.6em"
+                                                  }
+                                                : {})
+                                        }
+                                    };
+                                }
                             }
                         }
                         const lineW = outlineWidth * Math.min(2, Math.max(0.8, markerScale));

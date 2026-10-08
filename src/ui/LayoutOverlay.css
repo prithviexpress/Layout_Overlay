@@ -191,8 +191,13 @@
 .layout-overlay__label {
     position: absolute;
     padding: 0.1em 0.55em;
+    font-family: var(--lo-label-font, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     line-height: 1.25;
     white-space: nowrap;
     color: #0b1b2b;
@@ -269,7 +274,7 @@
     .layout-overlay__pulse { animation: none; opacity: 0.5; }
     .layout-overlay__shape-wrap, .layout-overlay__card { transition: none; animation: none; }
 }
-.layout-overlay__title { margin: 0 8px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.25; color: var(--lo-text); }
+.layout-overlay__title { font-family: var(--lo-label-font, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif); margin: 0 8px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.25; color: var(--lo-text); }
 .layout-overlay__toolbar--title-center .layout-overlay__title { order: 4; flex: 1 1 auto; text-align: center; margin: 0 8px; }
 .layout-overlay__toolbar--title-center .layout-overlay__legend { margin-left: 0; }
 .layout-overlay__toolbar--title-right .layout-overlay__title { order: 6; margin: 0 4px 0 12px; }
