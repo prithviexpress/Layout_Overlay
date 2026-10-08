@@ -15,3 +15,4 @@
 .layout-overlay__inspector { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 6px; margin-top: 4px; border: 1px solid #ddd; border-radius: 4px; background: #f7f7f7; font-size: 12px; }
 .layout-overlay__inspector input[type="number"] { width: 72px; }
 .layout-overlay__inspector input[type="text"] { width: 130px; }
+.layout-overlay__warning { margin: 4px 0; padding: 6px 8px; border: 1px solid #e0a800; background: #fff8e1; color: #6b4e00; font-size: 12px; border-radius: 4px; }

@@ -44,6 +44,8 @@ export interface LayoutOverlayContainerProps {
     startInEditMode: boolean;
     newXAttr?: EditableValue<Big>;
     newYAttr?: EditableValue<Big>;
+    movedXAttr?: EditableValue<Big>;
+    movedYAttr?: EditableValue<Big>;
     onMarkerClick?: ListActionValue;
     onMarkerDoubleClick?: ListActionValue;
     onMarkerContextMenu?: ListActionValue;
@@ -84,6 +86,8 @@ export interface LayoutOverlayPreviewProps {
     startInEditMode: boolean;
     newXAttr: string;
     newYAttr: string;
+    movedXAttr: string;
+    movedYAttr: string;
     onMarkerClick: {} | null;
     onMarkerDoubleClick: {} | null;
     onMarkerContextMenu: {} | null;

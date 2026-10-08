@@ -180,6 +180,26 @@
                 </attributeTypes>
             </property>
 
+            <property key="movedXAttr" type="attribute" required="false">
+                <caption>Moved X (output)</caption>
+                <description>Fallback when the marker's own X/Y are read-only: receives the new X after a drag. Read it in the "On marker moved / changed" action (a context object, e.g. the page data view).</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+            <property key="movedYAttr" type="attribute" required="false">
+                <caption>Moved Y (output)</caption>
+                <description>Fallback when the marker's own X/Y are read-only: receives the new Y after a drag.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
         </propertyGroup>
 
         <propertyGroup caption="Events">

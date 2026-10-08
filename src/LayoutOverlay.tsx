@@ -38,6 +38,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         allowEditing,
         startInEditMode,
         newXAttr,
+        movedXAttr,
+        movedYAttr,
         newYAttr,
         onMarkerClick,
         onMarkerDoubleClick,
@@ -51,6 +53,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [drag, setDrag] = useState<DragState | null>(null);
     const dragRef = useRef<DragState | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
 
     const editing = allowEditing && editMode;
     const w = Math.max(1, canvasWidth);
@@ -79,13 +82,27 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             const xv = xAttr.get(item);
             const yv = yAttr.get(item);
             if (xv.readOnly || yv.readOnly) {
+                // Fallback: hand the new coordinates to the page context so a microflow can save them.
+                const mx = movedXAttr;
+                const my = movedYAttr;
+                if (mx && my && !mx.readOnly && !my.readOnly && onMarkerChange?.get(item).canExecute) {
+                    mx.setValue(new Big(round(x)));
+                    my.setValue(new Big(round(y)));
+                    setWarning(null);
+                    run(onMarkerChange.get(item));
+                } else {
+                    setWarning(
+                        "X/Y attributes are read-only, so the move cannot be saved. Check entity access rules (write access to X and Y) or configure Moved X/Y output attributes."
+                    );
+                }
                 return;
             }
+            setWarning(null);
             xv.setValue(new Big(round(x)));
             yv.setValue(new Big(round(y)));
             run(onMarkerChange?.get(item));
         },
-        [xAttr, yAttr, onMarkerChange]
+        [xAttr, yAttr, movedXAttr, movedYAttr, onMarkerChange]
     );
 
     const pointToCoords = (clientX: number, clientY: number): { x: number; y: number } | null => {
@@ -211,6 +228,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         {editMode ? "Editing" : "Edit"}
                     </button>
                     {editing && <span>Drag markers · arrow keys nudge · click empty space to add</span>}
+                </div>
+            )}
+            {warning && (
+                <div className="layout-overlay__warning" role="alert">
+                    {warning}
                 </div>
             )}
             <div
