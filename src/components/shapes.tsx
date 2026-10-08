@@ -109,16 +109,16 @@ export function Shape({
             >
                 {solid ? (
                     <g>
-                        <rect x={0} y={1} width={31} height={12} rx={1.8} fill={color} />
-                        <path d="M34 1.8H42.2Q46 1.8 46 5.6V8.4Q46 12.2 42.2 12.2H34Z" fill={color} />
-                        <path d="M34 1.8H42.2Q46 1.8 46 5.6V8.4Q46 12.2 42.2 12.2H34Z" fill="rgba(0,0,0,0.2)" />
-                        <rect x={41.2} y={3.6} width={2.6} height={6.8} rx={1.1} fill="rgba(255,255,255,0.6)" />
+                        <rect x={0} y={1} width={32.2} height={12} rx={1.8} fill={color} />
+                        <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill={color} />
+                        <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill="rgba(0,0,0,0.2)" />
+                        <rect x={41.3} y={3.2} width={2.7} height={7.6} rx={1.2} fill="rgba(255,255,255,0.6)" />
                     </g>
                 ) : (
                     <g fill="none" stroke={color} strokeWidth={1.1} strokeLinejoin="round">
-                        <rect x={0.55} y={1.55} width={29.9} height={10.9} rx={1.5} />
-                        <path d="M34.55 2.35H42.2Q45.45 2.35 45.45 5.6V8.4Q45.45 11.65 42.2 11.65H34.55Z" />
-                        <rect x={41.4} y={4} width={2.2} height={6} rx={1} />
+                        <rect x={0.55} y={1.55} width={31.1} height={10.9} rx={1.5} />
+                        <path d="M33.55 1.55H42.4Q45.45 1.55 45.45 4.6V9.4Q45.45 12.45 42.4 12.45H33.55Z" />
+                        <rect x={41.5} y={3.6} width={2.2} height={6.8} rx={1} />
                     </g>
                 )}
             </svg>
