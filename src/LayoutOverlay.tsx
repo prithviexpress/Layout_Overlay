@@ -918,9 +918,15 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const rearLabel = labelOrientation === "follow" && shapeDef.kind === "truck";
                         let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
                         if (rearLabel) {
-                            const matchWidth = labelWidth === "match" && labelText !== "horizontal";
-                            // Same width as the truck, but never thinner than the text needs; even px keeps text crisp.
-                            const thickness = Math.ceil(Math.max(10, boxH, labelFont * 1.5) / 2) * 2;
+                            const exact = labelWidth === "match";
+                            const matchWidth = (exact || labelWidth === "readable") && labelText !== "horizontal";
+                            // Exact: the bubble is precisely as thick as the truck and the text shrinks to fit inside it.
+                            // Readable: never thinner than the text needs (even px keeps text crisp).
+                            const thickness = exact
+                                ? Math.max(8, Math.round(boxH))
+                                : Math.ceil(Math.max(10, boxH, labelFont * 1.5) / 2) * 2;
+                            const textFont = exact && matchWidth ? Math.min(labelFont, thickness * 0.9) : labelFont;
+                            const half = Math.floor(thickness / 2);
                             const dist = boxW / 2 + 4;
                             // Side of the truck the label sits on: behind the rear, or in front of the cabin.
                             const away = labelSide === "cabin" ? angle : angle + 180;
@@ -931,6 +937,10 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             const anchorAt = {
                                 left: `calc(50% + ${Math.round(ux * dist)}px)`,
                                 top: `calc(50% + ${Math.round(uy * dist)}px)`
+                            };
+                            const fit = {
+                                boxSizing: "border-box" as const,
+                                lineHeight: `${thickness - 2}px`
                             };
                             if (labelText === "horizontal") {
                                 // Horizontal text: the bubble's near edge touches the truck's end, on its axis.
@@ -960,48 +970,44 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                     rearStyle = {
                                         anchor: anchorAt,
                                         text: {
-                                            left: 0,
-                                            top: 0,
-                                            fontSize: labelFont,
+                                            fontSize: textFont,
                                             fontFamily,
-                                            ...(vertical ? { writingMode: "vertical-rl" as const } : {}),
-                                            transform: vertical
-                                                ? `translate(-50%, ${endAnchored ? "-100%" : "0"})`
-                                                : `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
-                                            ...(matchWidth
-                                                ? vertical
-                                                    ? {
-                                                          boxSizing: "border-box" as const,
-                                                          width: thickness,
-                                                          lineHeight: `${thickness - 2}px`,
-                                                          padding: "0.6em 0"
-                                                      }
-                                                    : {
-                                                          boxSizing: "border-box" as const,
-                                                          height: thickness,
-                                                          lineHeight: `${thickness - 2}px`,
-                                                          padding: "0 0.6em"
-                                                      }
-                                                : {})
+                                            ...(vertical
+                                                ? {
+                                                      writingMode: "vertical-rl" as const,
+                                                      ...(matchWidth
+                                                          ? {
+                                                                left: -half,
+                                                                width: thickness,
+                                                                padding: "0.5em 0",
+                                                                ...fit
+                                                            }
+                                                          : { left: 0, transform: "translateX(-50%)" }),
+                                                      ...(endAnchored ? { bottom: 0 } : { top: 0 })
+                                                  }
+                                                : {
+                                                      ...(matchWidth
+                                                          ? {
+                                                                top: -half,
+                                                                height: thickness,
+                                                                padding: "0 0.6em",
+                                                                ...fit
+                                                            }
+                                                          : { top: 0, transform: "translateY(-50%)" }),
+                                                      ...(endAnchored ? { right: 0 } : { left: 0 })
+                                                  })
                                         }
                                     };
                                 } else {
                                     rearStyle = {
                                         anchor: { ...anchorAt, transform: `rotate(${textAngle}deg)` },
                                         text: {
-                                            left: 0,
-                                            top: 0,
-                                            fontSize: labelFont,
+                                            fontSize: textFont,
                                             fontFamily,
-                                            transform: `translate(${endAnchored ? "-100%" : "0"}, -50%)`,
                                             ...(matchWidth
-                                                ? {
-                                                      boxSizing: "border-box" as const,
-                                                      height: thickness,
-                                                      lineHeight: `${thickness - 2}px`,
-                                                      padding: "0 0.6em"
-                                                  }
-                                                : {})
+                                                ? { top: -half, height: thickness, padding: "0 0.6em", ...fit }
+                                                : { top: 0, transform: "translateY(-50%)" }),
+                                            ...(endAnchored ? { right: 0 } : { left: 0 })
                                         }
                                     };
                                 }

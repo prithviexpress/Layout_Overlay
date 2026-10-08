@@ -355,9 +355,10 @@
 
             <property key="labelWidth" type="enumeration" defaultValue="match">
                 <caption>Truck label width</caption>
-                <description>Same width as the truck: the label bubble behind a truck is exactly as thick as the truck body (text is sized to fit). Fit to text: the bubble is only as big as its text.</description>
+                <description>Same width as the truck: the label bubble is exactly as thick as the truck body and the text shrinks to fit inside it (make the truck thicker with Size or Scale Y for larger text). Readable: the bubble is as thick as the truck but never thinner than the text needs. Fit to text: the bubble is only as big as its text.</description>
                 <enumerationValues>
-                    <enumerationValue key="match">Same width as the truck</enumerationValue>
+                    <enumerationValue key="match">Exactly the truck's width</enumerationValue>
+                    <enumerationValue key="readable">Truck's width, at least text height</enumerationValue>
                     <enumerationValue key="auto">Fit to text</enumerationValue>
                 </enumerationValues>
             </property>

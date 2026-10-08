@@ -47,7 +47,7 @@ export type LabelTextEnum = "along" | "horizontal";
 
 export type LabelSideEnum = "rear" | "cabin";
 
-export type LabelWidthEnum = "match" | "auto";
+export type LabelWidthEnum = "match" | "readable" | "auto";
 
 export interface HoverLinesType {
     text: ListExpressionValue<string>;

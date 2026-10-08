@@ -28,7 +28,7 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Label font size (px)** (default 12) is independent of how thin the icon is; the bubble is as thick as the truck but never thinner than the text needs. **Truck label text:** *Along the truck* (default, compact) or *Always horizontal* (easiest to read; the bubble can be wider than the truck and touches the truck's end).
 - **Outline tint (%)** (default 14) fills the inside of empty / not-occupied icons with a pale tint of their color so they stay visible over a busy drawing.
 - **Truck label side:** *Rear* (default) puts the label behind the container; *Cabin* puts it in front of the cab. Either way it is on the truck's axis, never beside it.
-- **Truck label width:** *Same width as the truck* (default) makes the label bubble exactly as thick as the truck body, with the text sized to fit; *Fit to text* sizes the bubble to its text.
+- **Truck label width:** *Exactly the truck's width* (default): the bubble is precisely as thick as the truck body and the text shrinks to fit (up to 90% of the thickness; use Size or Scale Y to make the truck thicker for larger text). *Truck's width, at least text height*: as thick as the truck but never thinner than the text needs. *Fit to text*: sized to its text.
 - **Outline thickness (px):** line width of empty / not-occupied icons in screen pixels (default 2), constant regardless of scale or zoom. Dotted lines use dots of that width.
 
 ## Events (Mendix actions)
