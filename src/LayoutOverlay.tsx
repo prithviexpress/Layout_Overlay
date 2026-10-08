@@ -78,6 +78,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         defaultSize,
         labelOrientation,
         labelWidth,
+        labelSide,
         outlineWidth,
         defaultShape,
         shapeExpr,
@@ -897,17 +898,20 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             top: `calc(50% + ${labelOffset + (labelFont - 11) * 0.6}px)`,
                             fontSize: labelFont
                         };
-                        // Trucks: the label sits directly behind the rear of the truck, on its axis, running
-                        // away from it (never beside it, never towards the cab) and turned to stay readable.
+                        // Trucks: the label sits on the truck's axis, behind the rear (default) or in front of the
+                        // cabin, running away from the truck (never beside it) and turned to stay readable.
                         const rearLabel = labelOrientation === "follow" && shapeDef.kind === "truck";
                         let rearStyle: { anchor: React.CSSProperties; text: React.CSSProperties } | undefined;
                         if (rearLabel) {
                             const matchWidth = labelWidth === "match";
                             const thickness = Math.max(10, boxH);
                             const dist = boxW / 2 + 4;
-                            const ax = -Math.cos(rad) * dist;
-                            const ay = -Math.sin(rad) * dist;
-                            let textAngle = (((angle + 180) % 360) + 360) % 360;
+                            // Side of the truck the label sits on: behind the rear, or in front of the cabin.
+                            const away = labelSide === "cabin" ? angle : angle + 180;
+                            const awayRad = (away * Math.PI) / 180;
+                            const ax = Math.cos(awayRad) * dist;
+                            const ay = Math.sin(awayRad) * dist;
+                            let textAngle = ((away % 360) + 360) % 360;
                             let endAnchored = false;
                             if (textAngle > 90 && textAngle <= 270) {
                                 // Flip so the text is never upside down; its end then touches the truck.
