@@ -69,6 +69,7 @@
 
             <property key="rotationAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Rotation (deg)</caption>
+                <description>Rotation of the shape in degrees (clockwise).</description>
                 <attributeTypes>
                     <attributeType name="Decimal" />
                     <attributeType name="Integer" />
@@ -85,6 +86,7 @@
 
             <property key="tooltipAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Tooltip</caption>
+                <description>Text shown in the browser tooltip when hovering the marker.</description>
                 <attributeTypes>
                     <attributeType name="String" />
                 </attributeTypes>
@@ -126,14 +128,17 @@
 
             <property key="defaultSize" type="integer" defaultValue="28">
                 <caption>Default marker size (px)</caption>
+                <description>Marker size in pixels when no Size attribute value is available.</description>
             </property>
 
             <property key="defaultColor" type="string" defaultValue="#d32f2f">
                 <caption>Default marker color</caption>
+                <description>CSS color used when no Color attribute value is available.</description>
             </property>
 
             <property key="showGrid" type="boolean" defaultValue="false">
                 <caption>Show grid</caption>
+                <description>Draw a background grid to help positioning.</description>
             </property>
 
             <property key="snapSize" type="integer" defaultValue="0">
@@ -152,6 +157,7 @@
 
             <property key="startInEditMode" type="boolean" defaultValue="false">
                 <caption>Start in edit mode</caption>
+                <description>Open the widget with editing already switched on.</description>
             </property>
 
             <property key="newXAttr" type="attribute" required="false">
@@ -166,6 +172,7 @@
 
             <property key="newYAttr" type="attribute" required="false">
                 <caption>Clicked Y (output)</caption>
+                <description>Receives the Y of an empty-canvas click before "On canvas click" fires.</description>
                 <attributeTypes>
                     <attributeType name="Decimal" />
                     <attributeType name="Integer" />
@@ -179,14 +186,17 @@
 
             <property key="onMarkerClick" type="action" dataSource="markers" required="false">
                 <caption>On marker click</caption>
+                <description>Action executed when a marker is clicked. Runs in the context of that marker object.</description>
             </property>
 
             <property key="onMarkerDoubleClick" type="action" dataSource="markers" required="false">
                 <caption>On marker double click</caption>
+                <description>Action executed when a marker is double clicked.</description>
             </property>
 
             <property key="onMarkerContextMenu" type="action" dataSource="markers" required="false">
                 <caption>On marker right click</caption>
+                <description>Action executed when a marker is right clicked (browser menu is suppressed).</description>
             </property>
 
             <property key="onMarkerChange" type="action" dataSource="markers" required="false">
