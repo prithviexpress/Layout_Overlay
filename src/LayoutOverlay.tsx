@@ -108,6 +108,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         hoverDelay,
         legendItems,
         titleText,
+        titleExpr,
+        titleLabel,
         titleAlign,
         movedYAttr,
         newYAttr,
@@ -199,6 +201,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     }, [zoom]);
 
     // The viewport only exists once the data source has loaded, so re-attach when that changes.
+    // Title sources, in order: expression, text template, plain text (none depends on the user's language except the template).
+    const titleValue = (titleExpr?.value || titleText?.value || titleLabel || "").trim();
     const wheelZoom = zoomWheel === "wheel";
     const loading = markers.status === "loading" && (markers.items ?? []).length === 0;
 
@@ -729,9 +733,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {(allowEditing || allowZoom || !!titleText?.value || legendItems.length > 0) && (
+            {(allowEditing || allowZoom || !!titleValue || legendItems.length > 0) && (
                 <div className={`layout-overlay__toolbar layout-overlay__toolbar--title-${titleAlign}`}>
-                    {titleText?.value && <span className="layout-overlay__title">{titleText.value}</span>}
+                    {titleValue && <span className="layout-overlay__title">{titleValue}</span>}
                     {allowEditing && (
                         <button
                             type="button"

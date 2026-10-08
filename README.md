@@ -48,7 +48,7 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 
 ## Hover card and legend
 - **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
-- **Title:** shown in the same toolbar as Edit / zoom / legend (text template; left, center or right of the bar).
+- **Title:** shown in the same toolbar as Edit / zoom / legend (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
 - **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
 ## Zoom and scroll

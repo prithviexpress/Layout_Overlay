@@ -15,9 +15,9 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
     const legend = props.legendItems.slice(0, 6);
     return (
         <div style={{ width: "100%", fontFamily: "sans-serif" }}>
-            {props.titleText && (
+            {(props.titleLabel || props.titleExpr || props.titleText) && (
                 <div style={{ fontSize: 18, fontWeight: 700, textAlign: props.titleAlign, marginBottom: 6 }}>
-                    {props.titleText}
+                    {props.titleLabel || props.titleExpr || props.titleText}
                 </div>
             )}
             {legend.length > 0 && (

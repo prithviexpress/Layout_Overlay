@@ -500,9 +500,20 @@
 
         <propertyGroup caption="Title">
 
+            <property key="titleLabel" type="string" required="false">
+                <caption>Title (plain text)</caption>
+                <description>The simplest way: type the heading here, e.g. TRUCK CALLING SYSTEM - AS-KB. Shown above the plan in the toolbar. Used when Title (expression) and Title (text template) give no text.</description>
+            </property>
+
+            <property key="titleExpr" type="expression" required="false">
+                <caption>Title (expression)</caption>
+                <description>Dynamic heading from an expression, e.g. 'TRUCK CALLING SYSTEM - ' + $Area/Name. Not language dependent. Used before Title (plain text).</description>
+                <returnType type="String" />
+            </property>
+
             <property key="titleText" type="textTemplate" required="false">
-                <caption>Title</caption>
-                <description>Heading shown above the plan, e.g. "TRUCK CALLING SYSTEM - AS-KB". Can use page parameters. Leave empty for no title.</description>
+                <caption>Title (text template)</caption>
+                <description>Heading as a translatable text template. Note: templates are stored per language, so the text only shows for the language it was typed in. Prefer Title (plain text) or Title (expression) if the title does not appear.</description>
             </property>
 
             <property key="titleAlign" type="enumeration" defaultValue="center">

@@ -144,6 +144,8 @@ export interface LayoutOverlayContainerProps {
     hoverTitle?: ListExpressionValue<string>;
     hoverLines: HoverLinesType[];
     hoverDelay: number;
+    titleLabel: string;
+    titleExpr?: DynamicValue<string>;
     titleText?: DynamicValue<string>;
     titleAlign: TitleAlignEnum;
     legendItems: LegendItemsType[];
@@ -222,6 +224,8 @@ export interface LayoutOverlayPreviewProps {
     hoverTitle: string;
     hoverLines: HoverLinesPreviewType[];
     hoverDelay: number | null;
+    titleLabel: string;
+    titleExpr: string;
     titleText: string;
     titleAlign: TitleAlignEnum;
     legendItems: LegendItemsPreviewType[];
