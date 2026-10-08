@@ -71,7 +71,7 @@ export function preview(props: LayoutOverlayPreviewProps): ReactElement {
                         <Shape
                             shape={parseShape(m.s)}
                             color={m.c}
-                            size={m.s === "truck" ? 60 : 28}
+                            size={m.s === "truck" ? 56 : 28}
                             rotation={0}
                             filled={m.filled ?? true}
                         />

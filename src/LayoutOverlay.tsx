@@ -778,7 +778,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <Shape
                                 shape={parseShape(l.legendShape)}
                                 color={l.legendColor}
-                                size={l.legendShape.toLowerCase().startsWith("truck") ? 34 : 14}
+                                size={l.legendShape.toLowerCase().startsWith("truck") ? 32 : 14}
                                 rotation={0}
                                 filled={l.legendFilled}
                             />
