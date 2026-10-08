@@ -41,6 +41,8 @@ export type ZoomWheelEnum = "ctrl" | "wheel";
 
 export type MarkerScalingEnum = "fixed" | "smooth" | "proportional";
 
+export type LabelOrientationEnum = "follow" | "upright";
+
 export interface HoverLinesType {
     text: ListExpressionValue<string>;
     bold: boolean;
@@ -112,6 +114,8 @@ export interface LayoutOverlayContainerProps {
     markerScaling: MarkerScalingEnum;
     viewportHeight: number;
     labelMinZoom: number;
+    labelOrientation: LabelOrientationEnum;
+    outlineWidth: number;
     showGrid: boolean;
     snapSize: number;
     allowEditing: boolean;
@@ -183,6 +187,8 @@ export interface LayoutOverlayPreviewProps {
     markerScaling: MarkerScalingEnum;
     viewportHeight: number | null;
     labelMinZoom: number | null;
+    labelOrientation: LabelOrientationEnum;
+    outlineWidth: number | null;
     showGrid: boolean;
     snapSize: number | null;
     allowEditing: boolean;

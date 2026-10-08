@@ -67,6 +67,8 @@ interface ShapeProps {
     filled?: boolean;
     /** Draw the outline as dots (only when not filled). */
     dotted?: boolean;
+    /** Outline thickness in screen px (does not change with scale or zoom). */
+    lineWidth?: number;
     scaleX?: number;
     scaleY?: number;
     mirror?: boolean;
@@ -79,12 +81,15 @@ export function Shape({
     rotation,
     filled = true,
     dotted = false,
+    lineWidth = 2,
     scaleX = 1,
     scaleY = 1,
     mirror = false
 }: ShapeProps): ReactElement {
     const width = size * scaleX;
     const height = size * shapeAspect(shape) * scaleY;
+    // Dotted: round caps on zero-length dashes give dots of the line width, spaced about two widths apart.
+    const dash = dotted ? `0.01 ${Math.max(3, lineWidth * 2)}` : undefined;
     const transform = [rotation ? `rotate(${rotation}deg)` : "", mirror ? "scaleX(-1)" : ""].filter(Boolean).join(" ");
     const style = { width, height, transform: transform || undefined };
 
@@ -119,16 +124,25 @@ export function Shape({
                     </g>
                 ) : (
                     <g
+                        className="layout-overlay__outline"
                         fill="none"
                         stroke={color}
-                        strokeWidth={dotted ? 1.5 : 1.1}
+                        strokeWidth={lineWidth}
                         strokeLinejoin="round"
                         strokeLinecap="round"
-                        strokeDasharray={dotted ? "0.01 2.7" : undefined}
+                        strokeDasharray={dash}
                     >
                         <rect x={0.55} y={1.55} width={31.1} height={10.9} rx={1.5} />
                         <path d="M33.55 1.55H42.4Q45.45 1.55 45.45 4.6V9.4Q45.45 12.45 42.4 12.45H33.55Z" />
-                        <rect x={41.5} y={3.6} width={2.2} height={6.8} rx={1} />
+                        <rect
+                            x={41.5}
+                            y={3.6}
+                            width={2.2}
+                            height={6.8}
+                            rx={1}
+                            strokeWidth={Math.max(1, lineWidth * 0.6)}
+                            strokeDasharray={undefined}
+                        />
                     </g>
                 )}
             </svg>
@@ -145,15 +159,17 @@ export function Shape({
             {filled ? (
                 <path d={shape.d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
             ) : (
-                <path
-                    d={shape.d}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={1.6}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    strokeDasharray={dotted ? "0.01 3.2" : undefined}
-                />
+                <g className="layout-overlay__outline">
+                    <path
+                        d={shape.d}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={lineWidth}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        strokeDasharray={dash}
+                    />
+                </g>
             )}
         </svg>
     );

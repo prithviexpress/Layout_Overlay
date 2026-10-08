@@ -76,6 +76,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         canvasWidth,
         canvasHeight,
         defaultSize,
+        labelOrientation,
+        outlineWidth,
         defaultShape,
         shapeExpr,
         sizeExpr,
@@ -799,6 +801,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         rotation={0}
                                         filled={l.legendFilled}
                                         dotted={l.legendDotted}
+                                        lineWidth={Math.max(1.5, Math.min(outlineWidth, 2.5))}
                                     />
                                     {l.legendCaption}
                                 </span>
@@ -887,6 +890,33 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const rad = (angle * Math.PI) / 180;
                         // Half the rotated extent, so the label clears a rotated icon.
                         const labelOffset = (Math.abs(boxW * Math.sin(rad)) + Math.abs(boxH * Math.cos(rad))) / 2 + 3;
+                        // Labels scale with the icons, within a readable range.
+                        const labelFont = 11 * Math.min(3, Math.max(0.75, markerScale));
+                        let labelStyle: React.CSSProperties = {
+                            top: `calc(50% + ${labelOffset + (labelFont - 11) * 0.6}px)`,
+                            fontSize: labelFont
+                        };
+                        if (labelOrientation === "follow") {
+                            // Sit beside the icon, perpendicular to its heading, and turn with it (kept readable).
+                            let px = -Math.sin(rad);
+                            let py = Math.cos(rad);
+                            if (py < -0.001 || (Math.abs(py) <= 0.001 && px < 0)) {
+                                px = -px;
+                                py = -py;
+                            }
+                            const dist = boxH / 2 + labelFont * 0.8 + 3;
+                            let textAngle = ((angle % 360) + 360) % 360;
+                            if (textAngle > 90 && textAngle < 270) {
+                                textAngle += 180;
+                            }
+                            labelStyle = {
+                                left: `calc(50% + ${px * dist}px)`,
+                                top: `calc(50% + ${py * dist}px)`,
+                                transform: `translate(-50%, -50%) rotate(${textAngle}deg)`,
+                                fontSize: labelFont
+                            };
+                        }
+                        const lineW = outlineWidth * Math.min(2, Math.max(0.8, markerScale));
                         const color = colorAttr?.get(item).value || defaultColor;
                         const label = labelAttr?.get(item).value;
                         const showLabel = !!label && zoom * 100 >= labelMinZoom;
@@ -947,16 +977,14 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         rotation={angle}
                                         filled={filled}
                                         dotted={dotted}
+                                        lineWidth={lineW}
                                         scaleX={scaleX}
                                         scaleY={scaleY}
                                         mirror={mirror}
                                     />
                                 </span>
                                 {showLabel && (
-                                    <span
-                                        className="layout-overlay__label"
-                                        style={{ top: `calc(50% + ${labelOffset}px)` }}
-                                    >
+                                    <span className="layout-overlay__label" style={labelStyle}>
                                         {label}
                                     </span>
                                 )}

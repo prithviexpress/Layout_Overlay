@@ -296,9 +296,9 @@
                 <description>Zoom level when the widget loads. Use e.g. 300 for a very wide plan.</description>
             </property>
 
-            <property key="markerScaling" type="enumeration" defaultValue="smooth">
+            <property key="markerScaling" type="enumeration" defaultValue="proportional">
                 <caption>Marker scaling</caption>
-                <description>How marker size follows zoom. Fixed keeps pixel size; Smooth grows with the square root of the zoom; Proportional scales exactly with the plan.</description>
+                <description>How icons and labels follow zoom. Proportional (default) scales exactly with the plan, like the drawing itself; Smooth grows with the square root of the zoom; Fixed keeps pixel size. Labels scale with the icons (within a readable range).</description>
                 <enumerationValues>
                     <enumerationValue key="fixed">Fixed size</enumerationValue>
                     <enumerationValue key="smooth">Smooth (square root)</enumerationValue>
@@ -314,6 +314,20 @@
             <property key="labelMinZoom" type="integer" defaultValue="0">
                 <caption>Show labels from zoom (%)</caption>
                 <description>Hide marker labels below this zoom level to declutter dense plans. 0 = always show.</description>
+            </property>
+
+            <property key="labelOrientation" type="enumeration" defaultValue="follow">
+                <caption>Label orientation</caption>
+                <description>Follow: the label turns with the icon and sits beside it along its heading (keeps labels out of the way on tightly packed, rotated bays). Upright: the label stays horizontal below the icon.</description>
+                <enumerationValues>
+                    <enumerationValue key="follow">Follow icon orientation</enumerationValue>
+                    <enumerationValue key="upright">Always upright</enumerationValue>
+                </enumerationValues>
+            </property>
+
+            <property key="outlineWidth" type="integer" defaultValue="2">
+                <caption>Outline thickness (px)</caption>
+                <description>Line thickness of outline (empty / not occupied) icons, in screen pixels. Dotted lines use dots of this width, so raise it if they are hard to see.</description>
             </property>
 
             <property key="showGrid" type="boolean" defaultValue="false">

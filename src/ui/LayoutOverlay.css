@@ -155,7 +155,8 @@
     filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 .layout-overlay__marker:hover .layout-overlay__shape-wrap { transform: scale(1.18); }
-.layout-overlay__shape { display: block; pointer-events: none; }
+.layout-overlay__shape { display: block; pointer-events: none; overflow: visible; }
+.layout-overlay__outline * { vector-effect: non-scaling-stroke; }
 .layout-overlay__marker--selected { z-index: 6; }
 .layout-overlay__marker--selected .layout-overlay__shape-wrap::after {
     content: "";
@@ -189,7 +190,7 @@
 }
 .layout-overlay__label {
     position: absolute;
-    padding: 1px 6px;
+    padding: 0.1em 0.55em;
     font-size: 11px;
     font-weight: 600;
     line-height: 1.25;

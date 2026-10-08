@@ -23,7 +23,8 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
 - **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
 - **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
-- Labels stay upright and clear rotated icons.
+- **Label orientation:** *Follow* (default) turns the label with the icon and puts it beside the icon along its heading, which keeps labels out of the way on tightly packed rotated bays; *Upright* keeps it horizontal below the icon.
+- **Outline thickness (px):** line width of empty / not-occupied icons in screen pixels (default 2), constant regardless of scale or zoom. Dotted lines use dots of that width.
 
 ## Events (Mendix actions)
 *Marker click, double click and right click run only while **Edit is off** (while editing a click just selects). Turn on **Fire click events while editing** to change that. **On marker moved / changed** only runs after a move or change made in edit mode.*
@@ -50,7 +51,7 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac, or trackpad pinch); *Mouse wheel zoom = Wheel only* makes the wheel alone zoom (Shift+wheel scrolls sideways). Toolbar has − / + / Fit width / Fit page.
 - **Middle mouse button** pans in any mode.
 - Scroll and **Shift + scroll** pan; dragging empty space pans when not editing.
-- **Marker scaling:** Fixed (pixel size), Smooth (grows with the square root of zoom, default) or Proportional (scales exactly with the plan).
+- **Marker scaling:** Proportional (default: icons and labels scale exactly with the plan), Smooth (grows with the square root of zoom) or Fixed (pixel size). Labels scale with the icons (0.75x to 3x of their base size).
 - **Fit width** fills the widget width (scroll vertically if taller); **Fit page** shows the whole plan at once, even below the minimum zoom.
 - Properties: min / max / initial zoom %, max viewport height (0 = 80% of window).
 
