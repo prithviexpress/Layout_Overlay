@@ -13,7 +13,6 @@ interface DragState {
 }
 
 const num = (v: Big | undefined | null, fallback = 0): number => (v ? Number(v.toString()) : fallback);
-const round = (n: number): number => Math.round(n * 100) / 100;
 
 export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement {
     const {
@@ -39,6 +38,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         startInEditMode,
         newXAttr,
         movedXAttr,
+        integerCoords,
         allowZoom,
         minZoom,
         maxZoom,
@@ -167,6 +167,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const selected = useMemo(() => items.find(i => i.id === selectedId), [items, selectedId]);
 
     const clamp = (v: number, max: number): number => Math.min(max, Math.max(0, v));
+    const round = (n: number): number => (integerCoords ? Math.round(n) : Math.round(n * 100) / 100);
     const snap = (v: number): number => (snapSize > 0 ? Math.round(v / snapSize) * snapSize : v);
 
     const run = (action: { canExecute: boolean; execute: () => void } | undefined): void => {
@@ -200,7 +201,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             yv.setValue(new Big(round(y)));
             run(onMarkerChange?.get(item));
         },
-        [xAttr, yAttr, movedXAttr, movedYAttr, onMarkerChange]
+        [xAttr, yAttr, movedXAttr, movedYAttr, onMarkerChange, integerCoords]
     );
 
     const pointToCoords = (clientX: number, clientY: number): { x: number; y: number } | null => {
@@ -269,11 +270,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         if (editing && dxy) {
             e.preventDefault();
             const x = clamp(
-                num(xAttr.get(item).value) + dxy[0] * (snapSize || (coordMode === "percent" ? 0.5 : 1)),
+                num(xAttr.get(item).value) +
+                    dxy[0] * (snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1)),
                 maxX
             );
             const y = clamp(
-                num(yAttr.get(item).value) + dxy[1] * (snapSize || (coordMode === "percent" ? 0.5 : 1)),
+                num(yAttr.get(item).value) +
+                    dxy[1] * (snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1)),
                 maxY
             );
             commitPosition(item, x, y);
@@ -511,7 +514,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             type="number"
                             step="any"
                             value={num(xAttr.get(selected).value)}
-                            onChange={e => setAttr(xAttr, selected, new Big(clamp(Number(e.target.value) || 0, maxX)))}
+                            onChange={e =>
+                                setAttr(xAttr, selected, new Big(round(clamp(Number(e.target.value) || 0, maxX))))
+                            }
                         />
                     </label>
                     <label>
@@ -520,7 +525,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             type="number"
                             step="any"
                             value={num(yAttr.get(selected).value)}
-                            onChange={e => setAttr(yAttr, selected, new Big(clamp(Number(e.target.value) || 0, maxY)))}
+                            onChange={e =>
+                                setAttr(yAttr, selected, new Big(round(clamp(Number(e.target.value) || 0, maxY))))
+                            }
                         />
                     </label>
                     {shapeAttr && (

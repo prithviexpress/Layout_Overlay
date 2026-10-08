@@ -49,6 +49,7 @@ export interface LayoutOverlayContainerProps {
     tabIndex?: number;
     markers: ListValue;
     xAttr: ListAttributeValue<Big>;
+    integerCoords: boolean;
     yAttr: ListAttributeValue<Big>;
     shapeAttr?: ListAttributeValue<string>;
     colorAttr?: ListAttributeValue<string>;
@@ -101,6 +102,7 @@ export interface LayoutOverlayPreviewProps {
     translate: (text: string) => string;
     markers: {} | { caption: string } | { type: string } | null;
     xAttr: string;
+    integerCoords: boolean;
     yAttr: string;
     shapeAttr: string;
     colorAttr: string;

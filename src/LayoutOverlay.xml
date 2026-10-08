@@ -31,6 +31,11 @@
                 </attributeTypes>
             </property>
 
+            <property key="integerCoords" type="boolean" defaultValue="true">
+                <caption>Integer coordinates</caption>
+                <description>Round X/Y to whole numbers before saving. Required when X/Y are Integer attributes (use Pixels as the coordinate unit for fine placement). Turn off for Decimal attributes.</description>
+            </property>
+
             <property key="yAttr" type="attribute" dataSource="markers" required="true">
                 <caption>Y</caption>
                 <description>Vertical position (0 = top). Must be editable for drag/move to save.</description>
