@@ -25,6 +25,7 @@ Both are resolved per marker in this order, so you can type a value, drive it fr
 - **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
 - **Label orientation:** *Behind the truck rear* (default): for trucks the label sits directly behind the rear of the truck, on its axis, running away from it (never beside it, never towards the cab) and turned to stay readable; other shapes keep the label below. *Always upright* keeps it horizontal below the icon.
 - **Label font** defaults to a clean system font (Segoe UI on Windows) with tabular digits; set *Label font* to override (installed or theme-loaded fonts only). Vertical labels use the browser's native vertical text and whole-pixel positions so they stay sharp.
+- **Label corner radius (px)** (default 3): 0 = square corners; a very large value gives the old pill shape.
 - **Label font size (px)** (default 12) is independent of how thin the icon is; the bubble is as thick as the truck but never thinner than the text needs. **Truck label text:** *Along the truck* (default, compact) or *Always horizontal* (easiest to read; the bubble can be wider than the truck and touches the truck's end).
 - **Outline tint (%)** (default 14) fills the inside of empty / not-occupied icons with a pale tint of their color so they stay visible over a busy drawing.
 - **Truck label side:** *Rear* (default) puts the label behind the container; *Cabin* puts it in front of the cab. Either way it is on the truck's axis, never beside it.

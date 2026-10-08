@@ -330,6 +330,11 @@
                 <description>Optional CSS font family for labels and the title, e.g. Segoe UI, Arial or Verdana. Empty = a clean system font (Segoe UI on Windows). Only fonts installed on the user's computer or already loaded by your theme can be used.</description>
             </property>
 
+            <property key="labelRadius" type="integer" defaultValue="3">
+                <caption>Label corner radius (px)</caption>
+                <description>Corner rounding of the label bubble. 0 = square corners, 3 = slightly rounded (default), larger = more rounded; a very large value gives a pill.</description>
+            </property>
+
             <property key="labelFontSize" type="integer" defaultValue="12">
                 <caption>Label font size (px)</caption>
                 <description>Base label text size in px at 100% zoom; it scales with zoom and no longer depends on how thin the icon is. Raise it if labels are hard to read.</description>

@@ -93,6 +93,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         allowEditing,
         canEditExpr,
         labelFontFamily,
+        labelRadius,
         startInEditMode,
         newXAttr,
         movedXAttr,
@@ -1086,13 +1087,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         <span className="layout-overlay__label-anchor" style={rearStyle.anchor}>
                                             <span
                                                 className="layout-overlay__label layout-overlay__label--rear"
-                                                style={rearStyle.text}
+                                                style={{ ...rearStyle.text, borderRadius: labelRadius }}
                                             >
                                                 {label}
                                             </span>
                                         </span>
                                     ) : (
-                                        <span className="layout-overlay__label" style={labelStyle}>
+                                        <span
+                                            className="layout-overlay__label"
+                                            style={{ ...labelStyle, borderRadius: labelRadius }}
+                                        >
                                             {label}
                                         </span>
                                     ))}

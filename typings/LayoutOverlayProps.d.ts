@@ -122,6 +122,7 @@ export interface LayoutOverlayContainerProps {
     labelMinZoom: number;
     labelOrientation: LabelOrientationEnum;
     labelFontFamily: string;
+    labelRadius: number;
     labelFontSize: number;
     labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
@@ -204,6 +205,7 @@ export interface LayoutOverlayPreviewProps {
     labelMinZoom: number | null;
     labelOrientation: LabelOrientationEnum;
     labelFontFamily: string;
+    labelRadius: number | null;
     labelFontSize: number | null;
     labelText: LabelTextEnum;
     labelSide: LabelSideEnum;
