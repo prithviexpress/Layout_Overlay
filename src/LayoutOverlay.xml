@@ -488,7 +488,7 @@
                 <returnType type="String" />
             </property>
 
-            <property key="markerLayoutRef" type="association" dataSource="markers" required="false">
+            <property key="markerLayoutRef" type="association" dataSource="markers" selectableObjects="layouts" required="false">
                 <caption>Marker -> layout association (e.g. Bay_PSL)</caption>
                 <description>The association from a marker (Bay) to its layout (PSL). The selected layout then shows exactly the markers linked to it, whatever their text values are. When empty, markers are matched by comparing the Group attribute (Filter tab) with Layout name.</description>
                 <associationTypes>
