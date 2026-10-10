@@ -69,7 +69,7 @@
 .layout-overlay__icon-btn:focus-visible { outline: 2px solid var(--lo-accent); outline-offset: 1px; }
 .layout-overlay__zoom-label { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; color: var(--lo-muted); }
 .layout-overlay__hint { color: var(--lo-muted); }
-.layout-overlay__last { font-weight: 600; color: var(--lo-accent); }
+.layout-overlay__last { font-weight: 600; color: var(--lo-text); }
 
 /* ── Legend ──────────────────────────────────────────────── */
 
@@ -147,8 +147,9 @@
 .layout-overlay__outline * { vector-effect: non-scaling-stroke; }
 .layout-overlay__marker--selected { z-index: 6; }
 /* Selection glow follows the icon's own outline and rotation (no box around it). */
-.layout-overlay__marker--selected .layout-overlay__shape { filter: drop-shadow(0 0 1px var(--lo-accent)) drop-shadow(0 0 3px var(--lo-accent)) drop-shadow(0 0 5px var(--lo-accent)); }
-.layout-overlay__marker:focus-visible .layout-overlay__shape { filter: drop-shadow(0 0 2px var(--lo-accent)) drop-shadow(0 0 4px var(--lo-accent)); }
+/* Selection: a white halo and a crisp black outline following the icon's own shape (no colour, no box). */
+.layout-overlay__marker--selected .layout-overlay__shape { filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(1.5px 0 0 #000) drop-shadow(-1.5px 0 0 #000) drop-shadow(0 1.5px 0 #000) drop-shadow(0 -1.5px 0 #000); }
+.layout-overlay__marker:focus-visible .layout-overlay__shape { filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000); }
 .layout-overlay__pulse {
     position: absolute;
     inset: -4px;
@@ -174,9 +175,9 @@
     text-rendering: optimizeLegibility;
     line-height: 1.25;
     white-space: nowrap;
-    color: #0b1b2b;
-    background: var(--lo-label-bg, rgba(232, 244, 253, 0.97));
-    border: 1px solid var(--lo-label-border, rgba(86, 150, 215, 0.85));
+    color: #000;
+    background: var(--lo-label-bg, #fff);
+    border: 1px solid var(--lo-label-border, #000);
     border-radius: 3px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1);
     pointer-events: none;
@@ -248,7 +249,7 @@
     .layout-overlay__pulse { animation: none; opacity: 0.5; }
     .layout-overlay__shape-wrap, .layout-overlay__card { transition: none; animation: none; }
 }
-.layout-overlay__toolbar--title-center .layout-overlay__toolbar--title-right .layout-overlay__status { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -2px 2px 8px; font-size: 12px; }
+.layout-overlay__status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: -2px 2px 8px; font-size: 12px; }
 .layout-overlay__legend-item .layout-overlay__shape { flex: none; }
 .layout-overlay__label-anchor { position: absolute; width: 0; height: 0; pointer-events: none; }
 .layout-overlay__label--rear { white-space: nowrap; }

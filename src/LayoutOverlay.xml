@@ -191,7 +191,7 @@
 
             <property key="backgroundImage" type="image" required="false">
                 <caption>Background image</caption>
-                <description>Layout / floor plan image. Use a static image, or a Dynamic image taken from an Image object in the page context, e.g. the PSL object (PSL is an Image entity), so each PSL shows its own layout.</description>
+                <description>Single layout picture (static, or a dynamic image from the page context). Used only when no Layouts are configured, or when the selected layout has no Layout picture; with Layouts, the Layout picture of the selected layout is the one drawn and this is ignored.</description>
             </property>
 
             <property key="backgroundUrl" type="expression" required="false">
@@ -418,6 +418,29 @@
                 <description>Off (default): marker click, double click and right click actions run only when Edit is off; while editing, a click just selects the marker. On: they also run while editing.</description>
             </property>
 
+            <property key="movedAngleAttr" type="attribute" required="false">
+                <caption>Moved angle (output)</caption>
+                <description>Receives the marker's new orientation in degrees (0 = right/east, clockwise) after a rotation (and with every move). Read it in the "On marker moved / changed" action. Together with Moved X / Y it gives the microflow the marker's complete new state.</description>
+                <attributeTypes>
+                    <attributeType name="Decimal" />
+                    <attributeType name="Integer" />
+                    <attributeType name="Long" />
+                </attributeTypes>
+            </property>
+
+            <property key="movedDirectionAttr" type="attribute" required="false">
+                <caption>Moved direction (output)</caption>
+                <description>Text version of the new orientation: E, SE, S, SW, W, NW, N or NE (a plain number of degrees for other angles). Use it when the marker's own orientation is stored as text.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="rotateStep" type="integer" defaultValue="90">
+                <caption>Rotate step (degrees)</caption>
+                <description>How far one click on the Rotate buttons (or the R key; Shift+R rotates back) turns the selected markers.</description>
+            </property>
+
             <property key="newXAttr" type="attribute" required="false">
                 <caption>Clicked X (output)</caption>
                 <description>Receives the X of an empty-canvas click before "On canvas click" fires.</description>
@@ -499,7 +522,7 @@
 
             <property key="layoutContent" type="widgets" dataSource="layouts" required="false">
                 <caption>Layout picture</caption>
-                <description>Drop an Image widget here and point it at the layout's own picture (the PSL image, dynamic image). Only the selected layout's picture is drawn, as the plan background. Set the Image widget's width and height to 100%.</description>
+                <description>Drop an Image widget here and point it at the layout's own picture (the PSL image, dynamic image). Only the selected layout's picture is drawn, as the plan background; it takes precedence over the Background image on the Canvas tab. Set the Image widget's width and height to 100%.</description>
             </property>
 
         </propertyGroup>

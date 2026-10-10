@@ -28,10 +28,14 @@ interface Move {
     item: ObjectItem;
     x: number;
     y: number;
+    /** New absolute orientation in degrees, when the move is (also) a rotation. */
+    angle?: number;
 }
 
 interface QueuedMove extends Move {
     mode: "direct" | "fallback";
+    angle: number;
+    angleChanged: boolean;
 }
 
 interface MarqueeState {
@@ -130,6 +134,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         titleLabel,
         titleAlign,
         movedYAttr,
+        movedAngleAttr,
+        movedDirectionAttr,
+        rotateStep,
         newYAttr,
         onMarkerClick,
         onMarkerDoubleClick,
@@ -151,6 +158,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [, setTick] = useState(0);
     const queueRef = useRef<QueuedMove[]>([]);
     const inFlightRef = useRef<{ item: ObjectItem; seen: boolean; t: number } | null>(null);
+    const [angleOverride, setAngleOverride] = useState<Record<string, { a: number; t: number }>>({});
     const [group, setGroup] = useState("");
     const [query, setQuery] = useState("");
     const [warning, setWarning] = useState<string | null>(null);
@@ -420,6 +428,22 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return { x: num(xAttr.get(item).value), y: num(yAttr.get(item).value) };
     };
 
+    // Orientation in degrees: the data value, or the optimistic one while a rotation is being saved.
+    const dataAngle = (item: ObjectItem): number =>
+        parseOrientation(orientationAttr?.get(item).value) + num(rotationAttr?.get(item).value);
+    const wrapAngle = (a: number): number => Math.round((((a % 360) + 360) % 360) * 100) / 100;
+    const currentAngle = (item: ObjectItem): number => angleOverride[item.id]?.a ?? wrapAngle(dataAngle(item));
+    const angleName = (a: number): string => {
+        const names = ["E", "SE", "S", "SW", "W", "NW", "N", "NE"];
+        const k = a / 45;
+        return Number.isInteger(k) ? names[k % 8] : String(a);
+    };
+    // Writing the orientation straight into the marker only works for a numeric, editable Orientation attribute.
+    const canWriteAngleDirect = (item: ObjectItem): boolean => {
+        const oa = orientationAttr?.get(item);
+        return !!oa && !oa.readOnly && typeof oa.value === "object" && oa.value !== null;
+    };
+
     // Position currently shown for a marker: live drag > optimistic override > data.
     const displayPos = (item: ObjectItem): Pos => {
         const s = drag?.moved ? drag.start[item.id] : undefined;
@@ -453,9 +477,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             if (m.mode === "direct") {
                 xAttr.get(m.item).setValue(new Big(x));
                 yAttr.get(m.item).setValue(new Big(y));
+                if (m.angleChanged && canWriteAngleDirect(m.item)) {
+                    orientationAttr?.get(m.item).setValue(new Big(m.angle));
+                }
             } else {
+                // The microflow gets the full state (X, Y and orientation) every time, so a rotation can never
+                // write a stale position and a move can never write a stale orientation.
                 movedXAttr?.setValue(new Big(x));
                 movedYAttr?.setValue(new Big(y));
+                movedAngleAttr?.setValue(new Big(m.angle));
+                movedDirectionAttr?.setValue(angleName(m.angle));
             }
             const act = onMarkerChange?.get(m.item);
             if (act?.canExecute) {
@@ -497,18 +528,53 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return () => window.clearTimeout(timer);
     });
 
+    // Drop optimistic orientations once the data catches up, or after a grace period.
+    useEffect(() => {
+        const ids = Object.keys(angleOverride);
+        if (ids.length === 0) {
+            return undefined;
+        }
+        const busy = queueRef.current.length > 0 || inFlightRef.current !== null;
+        const next = { ...angleOverride };
+        let changed = false;
+        ids.forEach(id => {
+            const item = items.find(i => i.id === id);
+            const o = angleOverride[id];
+            if (!item || wrapAngle(dataAngle(item)) === o.a || (!busy && nowMs() - o.t > 4000)) {
+                delete next[id];
+                changed = true;
+            }
+        });
+        if (changed) {
+            setAngleOverride(next);
+            return undefined;
+        }
+        const timer = window.setTimeout(() => setTick(x => x + 1), 1000);
+        return () => window.clearTimeout(timer);
+    });
+
     const commitMoves = (moves: Move[]): void => {
         const changed = moves.filter(m => {
             const p = basePos(m.item);
-            return round(m.x) !== p.x || round(m.y) !== p.y;
+            const rotated = m.angle !== undefined && wrapAngle(m.angle) !== currentAngle(m.item);
+            return round(m.x) !== p.x || round(m.y) !== p.y || rotated;
         });
         if (changed.length === 0) {
             return;
         }
-        const queued: QueuedMove[] = changed.map(m => ({
-            ...m,
-            mode: xAttr.get(m.item).readOnly || yAttr.get(m.item).readOnly ? "fallback" : "direct"
-        }));
+        const queued: QueuedMove[] = changed.map(m => {
+            const angleChanged = m.angle !== undefined && wrapAngle(m.angle) !== currentAngle(m.item);
+            const needFallback =
+                xAttr.get(m.item).readOnly ||
+                yAttr.get(m.item).readOnly ||
+                (angleChanged && !canWriteAngleDirect(m.item));
+            return {
+                ...m,
+                angle: wrapAngle(m.angle ?? currentAngle(m.item)),
+                angleChanged,
+                mode: needFallback ? "fallback" : "direct"
+            };
+        });
         if (queued.some(m => m.mode === "fallback")) {
             const problems: string[] = [];
             if (!movedXAttr || !movedYAttr) {
@@ -517,6 +583,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 problems.push(
                     "Moved X / Moved Y are read-only or have no object (is the widget inside the data view of that entity, and has it loaded?)"
                 );
+            }
+            if (queued.some(m => m.angleChanged) && !movedAngleAttr && !movedDirectionAttr) {
+                problems.push(
+                    "Moved angle / Moved direction are not configured (Editing tab), so a rotation cannot be saved"
+                );
+            } else if (
+                queued.some(m => m.angleChanged) &&
+                ((movedAngleAttr && movedAngleAttr.readOnly) || (movedDirectionAttr && movedDirectionAttr.readOnly))
+            ) {
+                problems.push("Moved angle / Moved direction are read-only or have no object");
             }
             if (!onMarkerChange) {
                 problems.push('"On marker moved / changed" is not configured (Events tab)');
@@ -534,12 +610,31 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             }
         }
         setWarning(null);
+        const rotatedOnly =
+            queued.every(m => m.angleChanged) &&
+            changed.every(m => {
+                const p = basePos(m.item);
+                return round(m.x) === p.x && round(m.y) === p.y;
+            });
         setLastEvent(
-            queued.length === 1
+            rotatedOnly
+                ? queued.length === 1
+                    ? `Rotated to ${queued[0].angle}° → saving`
+                    : `${queued.length} markers rotated → saving one by one`
+                : queued.length === 1
                 ? `Moved to (${round(queued[0].x)}, ${round(queued[0].y)}) → saving`
                 : `${queued.length} markers moved → saving one by one`
         );
         const now = nowMs();
+        setAngleOverride(prev => {
+            const next = { ...prev };
+            queued.forEach(m => {
+                if (m.angleChanged) {
+                    next[m.item.id] = { a: m.angle, t: now };
+                }
+            });
+            return next;
+        });
         setOverride(prev => {
             const next = { ...prev };
             queued.forEach(m => {
@@ -640,6 +735,20 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
     };
 
+    // Rotate markers by a step (default 90 degrees); each turns about its own centre.
+    const rotateItems = (group: ObjectItem[], delta: number): void => {
+        if (group.length === 0) {
+            return;
+        }
+        commitMoves(
+            group.map(i => {
+                const p = basePos(i);
+                return { item: i, x: p.x, y: p.y, angle: currentAngle(i) + delta };
+            })
+        );
+    };
+    const rotateBy = Math.max(1, rotateStep || 90);
+
     const nudgeStep = (): number => snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1);
 
     const onMarkerKeyDown = (e: React.KeyboardEvent, item: ObjectItem): void => {
@@ -653,6 +762,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
         if (e.key === "Escape") {
             setSelectedIds([]);
+            return;
+        }
+        if (editing && (e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            rotateItems(selectedIds.includes(item.id) ? selectedItems : [item], e.shiftKey ? -rotateBy : rotateBy);
             return;
         }
         if (editing && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
@@ -1003,6 +1117,28 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             )}
             {editing && (
                 <div className="layout-overlay__status">
+                    <span className="layout-overlay__group" role="group" aria-label="Rotate selected markers">
+                        <button
+                            type="button"
+                            className="layout-overlay__icon-btn"
+                            title={`Rotate ${rotateBy}° counter-clockwise (Shift+R)`}
+                            aria-label="Rotate counter-clockwise"
+                            disabled={selectedItems.length === 0}
+                            onClick={() => rotateItems(selectedItems, -rotateBy)}
+                        >
+                            <Icon kind="rotL" />
+                        </button>
+                        <button
+                            type="button"
+                            className="layout-overlay__icon-btn"
+                            title={`Rotate ${rotateBy}° clockwise (R)`}
+                            aria-label="Rotate clockwise"
+                            disabled={selectedItems.length === 0}
+                            onClick={() => rotateItems(selectedItems, rotateBy)}
+                        >
+                            <Icon kind="rotR" />
+                        </button>
+                    </span>
                     <span className="layout-overlay__group" role="group" aria-label="Align selected markers">
                         {alignBtn("left", "Align left edges (same X)")}
                         {alignBtn("centerX", "Align horizontal centers (same X)")}
@@ -1090,8 +1226,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 ? parseFilled(fillAttr?.get(item).value, defaultFill === "filled")
                                 : occupancy && occupiedStyle === "filled";
                         const dotted = occupancy === false;
-                        const angle =
-                            parseOrientation(orientationAttr?.get(item).value) + num(rotationAttr?.get(item).value);
+                        const angle = currentAngle(item);
                         const uniform = positiveNum(scaleAttr?.get(item).value);
                         const scaleX = uniform * positiveNum(scaleXAttr?.get(item).value);
                         const scaleY = uniform * positiveNum(scaleYAttr?.get(item).value);

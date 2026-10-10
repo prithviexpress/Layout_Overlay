@@ -141,6 +141,9 @@ export interface LayoutOverlayContainerProps {
     canEditExpr?: DynamicValue<boolean>;
     startInEditMode: boolean;
     clickWhileEditing: boolean;
+    movedAngleAttr?: EditableValue<Big>;
+    movedDirectionAttr?: EditableValue<string>;
+    rotateStep: number;
     newXAttr?: EditableValue<Big>;
     newYAttr?: EditableValue<Big>;
     movedXAttr?: EditableValue<Big>;
@@ -239,6 +242,9 @@ export interface LayoutOverlayPreviewProps {
     canEditExpr: string;
     startInEditMode: boolean;
     clickWhileEditing: boolean;
+    movedAngleAttr: string;
+    movedDirectionAttr: string;
+    rotateStep: number | null;
     newXAttr: string;
     newYAttr: string;
     movedXAttr: string;

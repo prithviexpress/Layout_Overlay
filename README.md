@@ -70,8 +70,16 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Non-matching markers:** *Hide* removes them from the plan; *Dim* fades them and makes them unclickable. Markers keep their positions either way.
 - In edit mode, select-all, box-select and align only touch the visible (matching) markers.
 
+## Rotating markers (edit mode)
+Select one or more markers and use the **Rotate** buttons (or **R** = clockwise, **Shift+R** = counter-clockwise); *Rotate step* sets the angle per click (default 90). The new orientation shows immediately and is saved like a move:
+- If the marker's own *Orientation* attribute is a numeric, editable attribute it is written directly.
+- Otherwise (e.g. a text `BayDirection`, or read-only attributes) set **Editing -> Moved angle (output)** (degrees, 0 = east, clockwise) and/or **Moved direction (output)** (text: E, SE, S, SW, W, NW, N, NE). The widget then calls *On marker moved / changed* with **X, Y, angle and direction all set**, so a microflow that copies them onto the Bay can never write a stale position or orientation.
+
+## Layout picture: which source wins
+With **Layouts** configured, the selected layout's **Layout picture** is drawn and the Canvas tab's **Background image** is ignored. The Background image is used only when no Layouts are configured, or when the selected layout has no Layout picture slot configured.
+
 ## Selection and hover
-- A selected (clicked) marker gets a blue glow that follows the icon's own outline and rotation; there is no box or ring around it.
+- A selected (clicked) marker gets a black outline with a white halo that follows the icon's own shape and rotation; no colour, no box or ring around it. Label bubbles are white with black text and a thin black border.
 - Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.
 
 ## Zoom and scroll
