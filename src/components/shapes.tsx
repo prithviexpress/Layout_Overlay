@@ -22,8 +22,9 @@ export const SHAPE_PATHS: Record<string, string> = {
 const TRUCK_VIEWBOX = { x: -1, y: 0, w: 48, h: 14 };
 // Dock leveler seen from above: deck plate with its hinged lip pointing right (0° = east, towards the truck).
 const DOCK_VIEWBOX = { x: -1, y: 0, w: 23, h: 18 };
-// Manual trolley (hand pallet truck) seen from above: forks pointing right (0° = east), drawbar and grip at the rear.
-const TROLLEY_VIEWBOX = { x: -11, y: -1, w: 36, h: 15 };
+// Manual trolley seen from above (as drawn on the plan): a platform with X bracing and two cross bars, with a
+// tow bar and grip at the rear (0° = east: the platform leads, the handle trails to the left).
+const TROLLEY_VIEWBOX = { x: -9, y: -1, w: 32, h: 18 };
 const TRUCK_NAMES = new Set(["truck", "truck-filled", "truck-outline"]);
 const DOCK_NAMES = new Set(["dock-leveler", "dockleveler", "dock", "leveler", "dock-levelor"]);
 const TROLLEY_NAMES = new Set(["manual-trolley", "trolley", "pallet-jack", "pallet-truck", "hand-pallet-truck"]);
@@ -173,7 +174,7 @@ export function Shape({
                     height={6.8}
                     rx={1}
                     strokeWidth={Math.max(1, lineWidth * 0.6)}
-                    strokeDasharray={undefined}
+                    strokeDasharray="none"
                 />
             </>
         );
@@ -207,22 +208,30 @@ export function Shape({
         box = TROLLEY_VIEWBOX;
         solid = (
             <g>
-                <rect x={6} y={0.5} width={18} height={4} rx={1.6} fill={color} />
-                <rect x={6} y={9.5} width={18} height={4} rx={1.6} fill={color} />
-                <rect x={2} y={0.5} width={6} height={13} rx={1.6} fill={color} />
-                <rect x={2} y={0.5} width={6} height={13} rx={1.6} fill="rgba(0,0,0,0.3)" />
-                <rect x={-8} y={6.2} width={10.4} height={1.6} rx={0.8} fill={color} />
-                <rect x={-8} y={6.2} width={10.4} height={1.6} rx={0.8} fill="rgba(0,0,0,0.6)" />
-                <rect x={-10} y={3.6} width={2.4} height={6.8} rx={1.2} fill="rgba(0,0,0,0.78)" />
+                <rect x={0} y={0} width={22} height={16} rx={1.2} fill={color} />
+                <rect x={2} y={2} width={18} height={12} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth={0.7} />
+                <path
+                    d="M2 2L20 14M2 14L20 2M2 5.4H20M2 10.6H20"
+                    stroke="rgba(255,255,255,0.8)"
+                    strokeWidth={0.7}
+                    fill="none"
+                />
+                <path d="M0 6.2L-2.6 8L0 9.8Z" fill="rgba(0,0,0,0.7)" />
+                <path d="M-2.6 8H-6" stroke="rgba(0,0,0,0.75)" strokeWidth={1.4} strokeLinecap="round" />
+                <rect x={-8} y={4.8} width={2.2} height={6.4} rx={1.1} fill="rgba(0,0,0,0.82)" />
             </g>
         );
         lines = (
             <>
-                <rect x={6.55} y={1.05} width={16.9} height={2.9} rx={1.2} />
-                <rect x={6.55} y={10.05} width={16.9} height={2.9} rx={1.2} />
-                <rect x={2.55} y={1.05} width={4.9} height={11.9} rx={1.2} />
-                <path d="M-7.6 7H2.4" strokeDasharray={undefined} />
-                <rect x={-9.45} y={4.15} width={1.3} height={5.7} rx={0.6} strokeDasharray={undefined} />
+                <rect x={0.55} y={0.55} width={20.9} height={14.9} rx={1} />
+                <path
+                    d="M2.6 2.6L19.4 13.4M2.6 13.4L19.4 2.6M2.6 5.6H19.4M2.6 10.4H19.4"
+                    strokeWidth={Math.max(1, lineWidth * 0.55)}
+                    strokeDasharray="none"
+                />
+                <path d="M0 6.2L-2.6 8L0 9.8" strokeDasharray="none" />
+                <path d="M-2.6 8H-5.8" strokeDasharray="none" />
+                <rect x={-7.6} y={5.2} width={1.4} height={5.6} rx={0.7} strokeDasharray="none" />
             </>
         );
     }
