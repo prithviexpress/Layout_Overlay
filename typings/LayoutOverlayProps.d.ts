@@ -107,6 +107,7 @@ export interface LayoutOverlayContainerProps {
     backgroundImage?: DynamicValue<WebImage>;
     backgroundUrl?: DynamicValue<string>;
     coordMode: CoordModeEnum;
+    canvasFromImage: boolean;
     canvasWidth: number;
     canvasHeight: number;
     defaultSize: number;
@@ -196,6 +197,7 @@ export interface LayoutOverlayPreviewProps {
     backgroundImage: { type: "static"; imageUrl: string } | { type: "dynamic"; entity: string } | null;
     backgroundUrl: string;
     coordMode: CoordModeEnum;
+    canvasFromImage: boolean;
     canvasWidth: number | null;
     canvasHeight: number | null;
     defaultSize: number | null;

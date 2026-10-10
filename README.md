@@ -5,6 +5,17 @@ Draw clickable, draggable, editable **shape markers** at X/Y coordinates over a 
 ## Data model
 A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes: `Shape`, `Color`, `Size`, `Rotation`, `Label`, `Tooltip`.
 
+## Layout from the PSL entity (one layout image per PSL)
+`PSL` is a specialization of `System.Image`, so each PSL object can hold its own layout picture, and `Bay` belongs to a PSL through `Bay_PSL`. To show the PSL's layout with its bays:
+1. **Page:** put a **Data view** for `PSL` (the selected PSL) and the widget inside it. If you also use the Moved X/Y fallback, nest a second data view (`Layout_Temp_Coords`) inside it, so both objects are in context.
+2. **Markers:** data source *Database*, entity `Bay`, XPath `[MyFirstModule.Bay_PSL = $currentObject]` (use the PSL data view as the object). X / Y are each PSL's own layout coordinates.
+3. **Background image:** choose *Dynamic image* and pick the PSL object (it is an Image). Each PSL then shows its own picture.
+4. **Canvas → Canvas size from image: on** keeps the image's proportions (never stretched) and, in Pixels mode, makes X/Y the image's own pixels. Off = Canvas width / height are used.
+5. **Title (expression):** e.g. `$PSL/Location + ' | ' + $PSL/Plant`.
+6. **Group attribute:** `Bay.Shop` for the shop drop-down.
+7. **Security:** give the user roles read access to `PSL` (including its image contents).
+Upload the layout once per PSL on an admin page with an image uploader bound to the PSL.
+
 ## Shape and size sources
 Both are resolved per marker in this order, so you can type a value, drive it from data, or compute it:
 - **Shape:** *Shape attribute* → *Shape (expression)* → *Default shape* (a dropdown in the widget settings: truck, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs up / down).

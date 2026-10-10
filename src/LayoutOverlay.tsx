@@ -75,6 +75,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         coordMode,
         canvasWidth,
         canvasHeight,
+        canvasFromImage,
         defaultSize,
         labelOrientation,
         labelWidth,
@@ -267,12 +268,31 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     };
 
     const editing = canEdit && editMode;
-    const w = Math.max(1, canvasWidth);
-    const h = Math.max(1, canvasHeight);
+    const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
+    // Optionally take the canvas size from the layout image itself (e.g. the image of the PSL in the page
+    // context), so the image is never stretched and pixel coordinates refer to the image's own pixels.
+    const [imgDims, setImgDims] = useState<{ url: string; w: number; h: number } | null>(null);
+    useEffect(() => {
+        if (!canvasFromImage || !bgUrl) {
+            return undefined;
+        }
+        let alive = true;
+        const img = new Image();
+        img.onload = () => {
+            if (alive && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                setImgDims({ url: bgUrl, w: img.naturalWidth, h: img.naturalHeight });
+            }
+        };
+        img.src = bgUrl;
+        return () => {
+            alive = false;
+        };
+    }, [bgUrl, canvasFromImage]);
+    const imgSize = canvasFromImage && imgDims && imgDims.url === bgUrl ? imgDims : null;
+    const w = Math.max(1, imgSize?.w ?? canvasWidth);
+    const h = Math.max(1, imgSize?.h ?? canvasHeight);
     const maxX = coordMode === "percent" ? 100 : w;
     const maxY = coordMode === "percent" ? 100 : h;
-
-    const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
 
     const items = markers.items ?? [];
     const hoverItem = drag?.moved || !hover ? undefined : items.find(i => i.id === hover.id);
