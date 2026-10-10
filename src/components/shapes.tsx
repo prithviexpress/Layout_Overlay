@@ -20,14 +20,22 @@ export const SHAPE_PATHS: Record<string, string> = {
 
 // Tractor and trailer seen from above, heading right (0° = east). Two separate shapes with a gap.
 const TRUCK_VIEWBOX = { x: -1, y: 0, w: 48, h: 14 };
+// Dock leveler seen from above: deck plate with its hinged lip pointing right (0° = east, towards the truck).
+const DOCK_VIEWBOX = { x: -1, y: 0, w: 23, h: 18 };
+// Manual trolley (hand pallet truck) seen from above: forks pointing right (0° = east), drawbar and grip at the rear.
+const TROLLEY_VIEWBOX = { x: -11, y: -1, w: 36, h: 15 };
 const TRUCK_NAMES = new Set(["truck", "truck-filled", "truck-outline"]);
+const DOCK_NAMES = new Set(["dock-leveler", "dockleveler", "dock", "leveler", "dock-levelor"]);
+const TROLLEY_NAMES = new Set(["manual-trolley", "trolley", "pallet-jack", "pallet-truck", "hand-pallet-truck"]);
 
-export const SHAPE_NAMES = ["truck", ...Object.keys(SHAPE_PATHS)];
+export const SHAPE_NAMES = ["truck", "dock-leveler", "manual-trolley", ...Object.keys(SHAPE_PATHS)];
 
 export type ParsedShape =
     | { kind: "path"; d: string }
     | { kind: "image"; url: string }
-    | { kind: "truck"; forceFill?: boolean };
+    | { kind: "truck"; forceFill?: boolean }
+    | { kind: "dock" }
+    | { kind: "trolley" };
 
 export function parseShape(value: string | undefined): ParsedShape {
     const v = (value ?? "").trim();
@@ -37,24 +45,39 @@ export function parseShape(value: string | undefined): ParsedShape {
     if (v.startsWith("url:")) {
         return { kind: "image", url: v.slice(4).trim() };
     }
-    const name = v.toLowerCase();
+    const name = v.toLowerCase().replace(/[\s_]+/g, "-");
     if (TRUCK_NAMES.has(name)) {
         return {
             kind: "truck",
             forceFill: name === "truck-filled" ? true : name === "truck-outline" ? false : undefined
         };
     }
+    if (DOCK_NAMES.has(name)) {
+        return { kind: "dock" };
+    }
+    if (TROLLEY_NAMES.has(name)) {
+        return { kind: "trolley" };
+    }
     return { kind: "path", d: SHAPE_PATHS[name] ?? SHAPE_PATHS.circle };
 }
 
-/** The truck is long and thin, so its nominal size is a bit larger than a square icon of the same Size. */
+/** Long, thin icons get a larger nominal width than a square icon of the same Size. */
 export function shapeWidthFactor(shape: ParsedShape): number {
-    return shape.kind === "truck" ? 1.6 : 1;
+    return shape.kind === "truck" ? 1.6 : shape.kind === "trolley" ? 1.25 : shape.kind === "dock" ? 1.1 : 1;
 }
 
 /** Height / width of the unscaled shape. */
 export function shapeAspect(shape: ParsedShape): number {
-    return shape.kind === "truck" ? TRUCK_VIEWBOX.h / TRUCK_VIEWBOX.w : 1;
+    switch (shape.kind) {
+        case "truck":
+            return TRUCK_VIEWBOX.h / TRUCK_VIEWBOX.w;
+        case "dock":
+            return DOCK_VIEWBOX.h / DOCK_VIEWBOX.w;
+        case "trolley":
+            return TROLLEY_VIEWBOX.h / TROLLEY_VIEWBOX.w;
+        default:
+            return 1;
+    }
 }
 
 interface ShapeProps {
@@ -65,6 +88,8 @@ interface ShapeProps {
     /** Clockwise degrees. */
     rotation: number;
     filled?: boolean;
+    /** Filled icons only: also draw a solid outline in a darker shade of the color. */
+    outlined?: boolean;
     /** Draw the outline as dots (only when not filled). */
     dotted?: boolean;
     /** Outline thickness in screen px (does not change with scale or zoom). */
@@ -82,6 +107,7 @@ export function Shape({
     size,
     rotation,
     filled = true,
+    outlined = false,
     dotted = false,
     lineWidth = 2,
     outlineTint = 0.14,
@@ -104,6 +130,8 @@ export function Shape({
     const dash = dotted ? `0.01 ${Math.max(3, lineWidth * 2)}` : undefined;
     const transform = [rotation ? `rotate(${rotation}deg)` : "", mirror ? "scaleX(-1)" : ""].filter(Boolean).join(" ");
     const style = { width, height, transform: transform || undefined };
+    // Solid outline of a filled icon: a darker shade of its own color.
+    const edgeStyle = { stroke: `color-mix(in srgb, ${color} 55%, black)` } as React.CSSProperties;
 
     if (shape.kind === "image") {
         return (
@@ -116,24 +144,115 @@ export function Shape({
             />
         );
     }
+
+    // Icons built from several parts: `solid` is the filled drawing, `lines` the same parts as outlines.
+    let box: { x: number; y: number; w: number; h: number } | undefined;
+    let solid: ReactElement | undefined;
+    let lines: ReactElement | undefined;
+    let fillIt = filled;
+
     if (shape.kind === "truck") {
-        const solid = shape.forceFill ?? filled;
-        const { x, y, w, h } = TRUCK_VIEWBOX;
+        box = TRUCK_VIEWBOX;
+        fillIt = shape.forceFill ?? filled;
+        solid = (
+            <g>
+                <rect x={0} y={1} width={32.2} height={12} rx={1.8} fill={color} />
+                <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill={color} />
+                <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill="rgba(0,0,0,0.2)" />
+                <rect x={41.3} y={3.2} width={2.7} height={7.6} rx={1.2} fill="rgba(255,255,255,0.6)" />
+            </g>
+        );
+        lines = (
+            <>
+                <rect x={0.55} y={1.55} width={31.1} height={10.9} rx={1.5} />
+                <path d="M33.55 1.55H42.4Q45.45 1.55 45.45 4.6V9.4Q45.45 12.45 42.4 12.45H33.55Z" />
+                <rect
+                    x={41.5}
+                    y={3.6}
+                    width={2.2}
+                    height={6.8}
+                    rx={1}
+                    strokeWidth={Math.max(1, lineWidth * 0.6)}
+                    strokeDasharray={undefined}
+                />
+            </>
+        );
+    } else if (shape.kind === "dock") {
+        box = DOCK_VIEWBOX;
+        solid = (
+            <g>
+                <rect x={0} y={1} width={16} height={16} rx={1} fill={color} />
+                <rect
+                    x={2.2}
+                    y={3.2}
+                    width={11.6}
+                    height={11.6}
+                    rx={0.6}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.45)"
+                    strokeWidth={0.6}
+                />
+                <rect x={16.5} y={3} width={4.5} height={12} rx={0.8} fill={color} />
+                <rect x={16.5} y={3} width={4.5} height={12} rx={0.8} fill="rgba(0,0,0,0.28)" />
+                <path d="M17.7 4.5V13.5M19.8 4.5V13.5" stroke="rgba(255,255,255,0.45)" strokeWidth={0.6} />
+            </g>
+        );
+        lines = (
+            <>
+                <rect x={0.55} y={1.55} width={14.9} height={14.9} rx={0.8} />
+                <rect x={17.05} y={3.55} width={3.4} height={10.9} rx={0.6} />
+            </>
+        );
+    } else if (shape.kind === "trolley") {
+        box = TROLLEY_VIEWBOX;
+        solid = (
+            <g>
+                <rect x={6} y={0.5} width={18} height={4} rx={1.6} fill={color} />
+                <rect x={6} y={9.5} width={18} height={4} rx={1.6} fill={color} />
+                <rect x={2} y={0.5} width={6} height={13} rx={1.6} fill={color} />
+                <rect x={2} y={0.5} width={6} height={13} rx={1.6} fill="rgba(0,0,0,0.3)" />
+                <rect x={-8} y={6.2} width={10.4} height={1.6} rx={0.8} fill={color} />
+                <rect x={-8} y={6.2} width={10.4} height={1.6} rx={0.8} fill="rgba(0,0,0,0.6)" />
+                <rect x={-10} y={3.6} width={2.4} height={6.8} rx={1.2} fill="rgba(0,0,0,0.78)" />
+            </g>
+        );
+        lines = (
+            <>
+                <rect x={6.55} y={1.05} width={16.9} height={2.9} rx={1.2} />
+                <rect x={6.55} y={10.05} width={16.9} height={2.9} rx={1.2} />
+                <rect x={2.55} y={1.05} width={4.9} height={11.9} rx={1.2} />
+                <path d="M-7.6 7H2.4" strokeDasharray={undefined} />
+                <rect x={-9.45} y={4.15} width={1.3} height={5.7} rx={0.6} strokeDasharray={undefined} />
+            </>
+        );
+    }
+
+    if (box && solid && lines) {
         return (
             <svg
                 className="layout-overlay__shape"
-                viewBox={`${x} ${y} ${w} ${h}`}
+                viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
                 preserveAspectRatio="none"
                 style={style}
                 aria-hidden="true"
             >
-                {solid ? (
-                    <g>
-                        <rect x={0} y={1} width={32.2} height={12} rx={1.8} fill={color} />
-                        <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill={color} />
-                        <path d="M33 1H42.4Q46 1 46 4.6V9.4Q46 13 42.4 13H33Z" fill="rgba(0,0,0,0.2)" />
-                        <rect x={41.3} y={3.2} width={2.7} height={7.6} rx={1.2} fill="rgba(255,255,255,0.6)" />
-                    </g>
+                {fillIt ? (
+                    <>
+                        {solid}
+                        {outlined && (
+                            <g
+                                className="layout-overlay__outline"
+                                fill="none"
+                                style={edgeStyle}
+                                stroke="#222"
+                                strokeWidth={lineWidth}
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                            >
+                                {lines}
+                            </g>
+                        )}
+                    </>
                 ) : (
                     <g
                         className="layout-overlay__outline"
@@ -145,22 +264,14 @@ export function Shape({
                         strokeLinecap="round"
                         strokeDasharray={dash}
                     >
-                        <rect x={0.55} y={1.55} width={31.1} height={10.9} rx={1.5} />
-                        <path d="M33.55 1.55H42.4Q45.45 1.55 45.45 4.6V9.4Q45.45 12.45 42.4 12.45H33.55Z" />
-                        <rect
-                            x={41.5}
-                            y={3.6}
-                            width={2.2}
-                            height={6.8}
-                            rx={1}
-                            strokeWidth={Math.max(1, lineWidth * 0.6)}
-                            strokeDasharray={undefined}
-                        />
+                        {lines}
                     </g>
                 )}
             </svg>
         );
     }
+
+    const d = shape.kind === "path" ? shape.d : SHAPE_PATHS.circle;
     return (
         <svg
             className="layout-overlay__shape"
@@ -170,11 +281,24 @@ export function Shape({
             aria-hidden="true"
         >
             {filled ? (
-                <path d={shape.d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
+                outlined ? (
+                    <g className="layout-overlay__outline">
+                        <path
+                            d={d}
+                            fill={color}
+                            style={edgeStyle}
+                            stroke="#222"
+                            strokeWidth={lineWidth}
+                            strokeLinejoin="round"
+                        />
+                    </g>
+                ) : (
+                    <path d={d} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={0.8} />
+                )
             ) : (
                 <g className="layout-overlay__outline">
                     <path
-                        d={shape.d}
+                        d={d}
                         fill={tintFill}
                         style={tintStyle}
                         stroke={color}

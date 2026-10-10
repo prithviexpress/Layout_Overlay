@@ -48,7 +48,7 @@
 
             <property key="shapeAttr" type="attribute" dataSource="markers" required="false">
                 <caption>Shape</caption>
-                <description>Built-in: truck (top view), circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
+                <description>Built-in: truck (top view), dock-leveler, manual-trolley, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs-up, thumbs-down. Custom: "svg:&lt;path d&gt;" (24x24 viewBox) or "url:&lt;image url&gt;". Empty = circle.</description>
                 <attributeTypes>
                     <attributeType name="String" />
                     <attributeType name="Enum" />
@@ -245,6 +245,8 @@
                     <enumerationValue key="warning">Warning</enumerationValue>
                     <enumerationValue key="thumbsUp">Thumbs up</enumerationValue>
                     <enumerationValue key="thumbsDown">Thumbs down</enumerationValue>
+                    <enumerationValue key="dockLeveler">Dock leveler</enumerationValue>
+                    <enumerationValue key="manualTrolley">Manual trolley</enumerationValue>
                     <enumerationValue key="truck">Truck (top view)</enumerationValue>
                 </enumerationValues>
             </property>
@@ -258,12 +260,12 @@
                 </enumerationValues>
             </property>
 
-            <property key="occupiedStyle" type="enumeration" defaultValue="outline">
+            <property key="occupiedStyle" type="enumeration" defaultValue="filled">
                 <caption>Occupied style</caption>
-                <description>How an occupied marker is drawn when Occupancy is set: a solid line (outline) or a solid filled shape. Not occupied is always a dotted line.</description>
+                <description>How an occupied marker is drawn when Occupancy is set. Default: a solid fill with a solid outline (a darker shade of its color). Solid line: outline only. Not occupied is always a dotted line.</description>
                 <enumerationValues>
-                    <enumerationValue key="outline">Solid line</enumerationValue>
-                    <enumerationValue key="filled">Solid filled</enumerationValue>
+                    <enumerationValue key="filled">Solid fill with solid outline</enumerationValue>
+                    <enumerationValue key="outline">Solid line only</enumerationValue>
                 </enumerationValues>
             </property>
 

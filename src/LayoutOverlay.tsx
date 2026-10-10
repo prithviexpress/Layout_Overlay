@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useLayoutEffect, useRef, u
 import Big from "big.js";
 import { ObjectItem } from "mendix";
 import { LayoutOverlayContainerProps } from "../typings/LayoutOverlayProps";
-import { Shape, SHAPE_NAMES, parseShape, shapeAspect, shapeWidthFactor } from "./components/shapes";
+import { ParsedShape, Shape, SHAPE_NAMES, parseShape, shapeAspect, shapeWidthFactor } from "./components/shapes";
 import { parseBool, parseFilled, parseOccupancy, parseOrientation, positiveNum } from "./components/orient";
 import { Icon, IconKind } from "./components/icons";
 import "./ui/LayoutOverlay.css";
@@ -48,11 +48,20 @@ interface MarqueeState {
     additive: boolean;
 }
 
-const SHAPE_FROM_ENUM: Record<string, string> = { thumbsUp: "thumbs-up", thumbsDown: "thumbs-down" };
+const SHAPE_FROM_ENUM: Record<string, string> = {
+    thumbsUp: "thumbs-up",
+    thumbsDown: "thumbs-down",
+    dockLeveler: "dock-leveler",
+    manualTrolley: "manual-trolley"
+};
 const num = (v: Big | undefined | null, fallback = 0): number => (v ? Number(v.toString()) : fallback);
 const DRAG_THRESHOLD_PX = 3;
 const nowMs = (): number => Date.now();
 const LOAD_STAMP = nowMs();
+
+function legendIconSize(shape: ParsedShape): number {
+    return shape.kind === "truck" ? 34 : shape.kind === "trolley" ? 28 : shape.kind === "dock" ? 16 : 13;
+}
 
 /**
  * URL of the picture of an Image object (an entity that is, or specialises, System.Image), served by the
@@ -1149,7 +1158,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <Shape
                                 shape={parseShape(l.legendShape)}
                                 color={l.legendColor}
-                                size={l.legendShape.toLowerCase().startsWith("truck") ? 34 : 13}
+                                size={legendIconSize(parseShape(l.legendShape))}
                                 rotation={0}
                                 filled={l.legendFilled}
                                 dotted={l.legendDotted}
@@ -1282,6 +1291,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                 ? parseFilled(fillAttr?.get(item).value, defaultFill === "filled")
                                 : occupancy && occupiedStyle === "filled";
                         const dotted = occupancy === false;
+                        // Occupied (default style): a solid fill AND a solid outline in a darker shade.
+                        const outlined = occupancy === true && occupiedStyle === "filled";
                         const angle = currentAngle(item);
                         const uniform = positiveNum(scaleAttr?.get(item).value);
                         const scaleX = uniform * positiveNum(scaleXAttr?.get(item).value);
@@ -1466,6 +1477,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                                         rotation={angle}
                                         filled={filled}
                                         dotted={dotted}
+                                        outlined={outlined}
                                         lineWidth={lineW}
                                         outlineTint={outlineFill / 100}
                                         scaleX={scaleX}

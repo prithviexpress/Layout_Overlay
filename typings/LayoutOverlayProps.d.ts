@@ -34,11 +34,13 @@ export type DefaultShapeEnum =
     | "warning"
     | "thumbsUp"
     | "thumbsDown"
+    | "dockLeveler"
+    | "manualTrolley"
     | "truck";
 
 export type DefaultFillEnum = "filled" | "outline";
 
-export type OccupiedStyleEnum = "outline" | "filled";
+export type OccupiedStyleEnum = "filled" | "outline";
 
 export type ZoomWheelEnum = "ctrl" | "wheel";
 
