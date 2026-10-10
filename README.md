@@ -20,12 +20,15 @@ Select one or more markers and use the **Rotate** buttons (or **R** = clockwise,
 - If the marker's own *Orientation* attribute is a numeric, editable attribute it is written directly.
 - Otherwise (e.g. a text `BayDirection`, or read-only attributes) set **Editing -> Moved angle (output)** (degrees, 0 = east, clockwise) and/or **Moved direction (output)** (text: E, SE, S, SW, W, NW, N, NE). The widget then calls *On marker moved / changed* with **X, Y, angle and direction all set**, so a microflow that copies them onto the Bay can never write a stale position or orientation.
 
+## Changing icons (edit mode)
+Select markers and use the **Icon** drop-down in the edit row (also in the inspector for a single marker). The new icon shows immediately and is saved like a move: set **Editing -> Moved shape (output)** to a String attribute of the page's temp object; the widget fills it with the icon name (e.g. `dock-leveler`) and calls *On marker moved / changed*, and your microflow copies it onto the Bay's shape when it is not empty (empty = icon unchanged). If the marker's *Shape* attribute is editable it is written directly. **Icons offered in edit mode** limits the list (e.g. `truck, dock-leveler, manual-trolley`); if the Shape attribute is an enumeration, list only names that exist in it.
+
 ## Layout picture: which source wins
 With **Layouts** configured the picture is chosen in this order: a widget in the *Layout picture* slot, then the selected layout's own picture loaded from the server, then the Canvas tab's **Background image** (also used when no Layouts are configured).
 
 ## Selection and hover
 - A selected (clicked) marker gets a black outline with a white halo that follows the icon's own shape and rotation; no colour, no box or ring around it. Label bubbles are black with white text.
-- Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.
+- The hover card is only drawn when it has content (no empty bubble). Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.
 
 ## Zoom and scroll
 - **Ctrl + mouse wheel** zooms in/out around the cursor (Cmd on Mac, or trackpad pinch); *Mouse wheel zoom = Wheel only* makes the wheel alone zoom (Shift+wheel scrolls sideways). Toolbar has − / + / Fit width / Fit page.

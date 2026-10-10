@@ -438,6 +438,19 @@
                 </attributeTypes>
             </property>
 
+            <property key="movedShapeAttr" type="attribute" required="false">
+                <caption>Moved shape (output)</caption>
+                <description>String attribute of the page's temp object. After the user changes a marker's icon in edit mode the widget writes the new icon name here (e.g. truck, dock-leveler, manual-trolley) and calls "On marker moved / changed"; it is empty when the icon did not change. Copy it onto the marker's shape when it is not empty.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                </attributeTypes>
+            </property>
+
+            <property key="iconChoices" type="string" required="false">
+                <caption>Icons offered in edit mode</caption>
+                <description>Optional comma-separated list of the icons the edit-mode Icon drop-down offers, e.g. truck, dock-leveler, manual-trolley. Empty = all built-in icons. If the Shape attribute is an enumeration, list only names that exist in it.</description>
+            </property>
+
             <property key="rotateStep" type="integer" defaultValue="90">
                 <caption>Rotate step (degrees)</caption>
                 <description>How far one click on the Rotate buttons (or the R key; Shift+R rotates back) turns the selected markers.</description>

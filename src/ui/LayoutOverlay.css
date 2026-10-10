@@ -332,3 +332,4 @@
     .layout-overlay__toolbar { flex-wrap: wrap; }
     .layout-overlay__title { order: -1; flex: 1 1 100%; }
 }
+.layout-overlay__icon-select { min-width: 150px; height: 28px; }

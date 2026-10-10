@@ -30,12 +30,16 @@ interface Move {
     y: number;
     /** New absolute orientation in degrees, when the move is (also) a rotation. */
     angle?: number;
+    /** New icon (shape name), when the change is (also) an icon change. */
+    shape?: string;
 }
 
 interface QueuedMove extends Move {
     mode: "direct" | "fallback";
     angle: number;
     angleChanged: boolean;
+    shape: string;
+    shapeChanged: boolean;
 }
 
 interface MarqueeState {
@@ -168,6 +172,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         movedYAttr,
         movedAngleAttr,
         movedDirectionAttr,
+        movedShapeAttr,
+        iconChoices,
         rotateStep,
         newYAttr,
         onMarkerClick,
@@ -190,6 +196,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [, setTick] = useState(0);
     const queueRef = useRef<QueuedMove[]>([]);
     const inFlightRef = useRef<{ item: ObjectItem; seen: boolean; t: number } | null>(null);
+    const [shapeOverride, setShapeOverride] = useState<Record<string, { s: string; t: number }>>({});
     const [angleOverride, setAngleOverride] = useState<Record<string, { a: number; t: number }>>({});
     const [group, setGroup] = useState("");
     const [query, setQuery] = useState("");
@@ -425,6 +432,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const titleValue = (layoutTitle || titleExpr?.value || titleText?.value || titleLabel || "").trim();
 
     const hoverItem = drag?.moved || !hover ? undefined : items.find(i => i.id === hover.id);
+    // The hover card is only drawn when it has something to say (no empty bubble).
+    const cardTitle = hoverItem ? hoverTitle?.get(hoverItem).value : undefined;
+    const cardLines = hoverItem
+        ? hoverLines.map(l => ({ text: l.text.get(hoverItem).value, bold: l.bold })).filter(l => !!l.text)
+        : [];
+    const showCard = !!hover && !!hoverItem && (!!cardTitle || cardLines.length > 0);
     // A marker is shown when it is in the chosen group/layout AND its label, group or extra search
     // attribute contains the typed text.
     const q = norm(query);
@@ -491,6 +504,22 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return !!oa && !oa.readOnly && typeof oa.value === "object" && oa.value !== null;
     };
 
+    // Icon (shape name): the data value, or the optimistic one while a change is being saved.
+    const normShape = (s: string): string =>
+        s
+            .trim()
+            .toLowerCase()
+            .replace(/[\s_]+/g, "-");
+    const defaultShapeName = SHAPE_FROM_ENUM[defaultShape] || defaultShape;
+    const dataShape = (item: ObjectItem): string =>
+        shapeAttr?.get(item).value || shapeExpr?.get(item).value || defaultShapeName;
+    const currentShape = (item: ObjectItem): string => shapeOverride[item.id]?.s ?? dataShape(item);
+    // Writing the icon straight into the marker only works for an editable Shape attribute.
+    const canWriteShapeDirect = (item: ObjectItem): boolean => {
+        const sa = shapeAttr?.get(item);
+        return !!sa && !sa.readOnly;
+    };
+
     // Position currently shown for a marker: live drag > optimistic override > data.
     const displayPos = (item: ObjectItem): Pos => {
         const s = drag?.moved ? drag.start[item.id] : undefined;
@@ -527,6 +556,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 if (m.angleChanged && canWriteAngleDirect(m.item)) {
                     orientationAttr?.get(m.item).setValue(new Big(m.angle));
                 }
+                if (m.shapeChanged && canWriteShapeDirect(m.item)) {
+                    shapeAttr?.get(m.item).setValue(m.shape);
+                }
             } else {
                 // The microflow gets the full state (X, Y and orientation) every time, so a rotation can never
                 // write a stale position and a move can never write a stale orientation.
@@ -534,6 +566,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 movedYAttr?.setValue(new Big(y));
                 movedAngleAttr?.setValue(new Big(m.angle));
                 movedDirectionAttr?.setValue(angleName(m.angle));
+                // Empty = the icon is unchanged, so a microflow only copies it when it is not empty.
+                movedShapeAttr?.setValue(m.shapeChanged ? m.shape : "");
             }
             const act = onMarkerChange?.get(m.item);
             if (act?.canExecute) {
@@ -600,28 +634,65 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return () => window.clearTimeout(timer);
     });
 
+    // Drop optimistic icons once the data catches up, or after a grace period.
+    useEffect(() => {
+        const ids = Object.keys(shapeOverride);
+        if (ids.length === 0) {
+            return undefined;
+        }
+        const busy = queueRef.current.length > 0 || inFlightRef.current !== null;
+        const next = { ...shapeOverride };
+        let changed = false;
+        ids.forEach(id => {
+            const item = items.find(i => i.id === id);
+            const o = shapeOverride[id];
+            if (!item || normShape(dataShape(item)) === normShape(o.s) || (!busy && nowMs() - o.t > 4000)) {
+                delete next[id];
+                changed = true;
+            }
+        });
+        if (changed) {
+            setShapeOverride(next);
+            return undefined;
+        }
+        const timer = window.setTimeout(() => setTick(x => x + 1), 1000);
+        return () => window.clearTimeout(timer);
+    });
+
     const commitMoves = (moves: Move[]): void => {
+        const isRotated = (m: Move): boolean => m.angle !== undefined && wrapAngle(m.angle) !== currentAngle(m.item);
+        const isReshaped = (m: Move): boolean =>
+            m.shape !== undefined && normShape(m.shape) !== normShape(currentShape(m.item));
         const changed = moves.filter(m => {
             const p = basePos(m.item);
-            const rotated = m.angle !== undefined && wrapAngle(m.angle) !== currentAngle(m.item);
-            return round(m.x) !== p.x || round(m.y) !== p.y || rotated;
+            return round(m.x) !== p.x || round(m.y) !== p.y || isRotated(m) || isReshaped(m);
         });
         if (changed.length === 0) {
             return;
         }
         const queued: QueuedMove[] = changed.map(m => {
-            const angleChanged = m.angle !== undefined && wrapAngle(m.angle) !== currentAngle(m.item);
+            const angleChanged = isRotated(m);
+            const shapeChanged = isReshaped(m);
             const needFallback =
                 xAttr.get(m.item).readOnly ||
                 yAttr.get(m.item).readOnly ||
-                (angleChanged && !canWriteAngleDirect(m.item));
+                (angleChanged && !canWriteAngleDirect(m.item)) ||
+                (shapeChanged && !canWriteShapeDirect(m.item));
             return {
                 ...m,
                 angle: wrapAngle(m.angle ?? currentAngle(m.item)),
                 angleChanged,
+                shape: m.shape ?? currentShape(m.item),
+                shapeChanged,
                 mode: needFallback ? "fallback" : "direct"
             };
         });
+        const samePos = (m: QueuedMove): boolean => {
+            const p = basePos(m.item);
+            return round(m.x) === p.x && round(m.y) === p.y;
+        };
+        const onlyIcon = queued.every(m => m.shapeChanged && !m.angleChanged && samePos(m));
+        const onlyRotation = queued.every(m => m.angleChanged && !m.shapeChanged && samePos(m));
         if (queued.some(m => m.mode === "fallback")) {
             const problems: string[] = [];
             if (!movedXAttr || !movedYAttr) {
@@ -641,6 +712,13 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             ) {
                 problems.push("Moved angle / Moved direction are read-only or have no object");
             }
+            if (queued.some(m => m.shapeChanged) && !movedShapeAttr) {
+                problems.push(
+                    "Moved shape (output) is not set on the Editing tab. Point it at a String attribute of the page's temp object and copy it onto the Bay's shape in the On marker moved / changed microflow when it is not empty"
+                );
+            } else if (queued.some(m => m.shapeChanged) && movedShapeAttr && movedShapeAttr.readOnly) {
+                problems.push("Moved shape is read-only or has no object");
+            }
             if (!onMarkerChange) {
                 problems.push('"On marker moved / changed" is not configured (Events tab)');
             } else if (!onMarkerChange.get(queued[0].item).canExecute) {
@@ -650,29 +728,29 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             }
             if (problems.length > 0) {
                 // eslint-disable-next-line no-console
-                console.warn("[LayoutOverlay] move not saved:", problems);
-                const onlyRotation = queued.every(m => {
-                    const p = basePos(m.item);
-                    return m.angleChanged && round(m.x) === p.x && round(m.y) === p.y;
-                });
+                console.warn("[LayoutOverlay] change not saved:", problems);
                 setWarning(
-                    onlyRotation
+                    onlyIcon
+                        ? `The icon change cannot be saved: ${problems.join("; ")}.`
+                        : onlyRotation
                         ? `The rotation cannot be saved: ${problems.join("; ")}.`
                         : `X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`
                 );
-                setLastEvent(`${queued.length} marker(s) ${onlyRotation ? "rotated" : "moved"} → NOT saved`);
+                setLastEvent(
+                    `${queued.length} marker(s) ${
+                        onlyIcon ? "re-iconed" : onlyRotation ? "rotated" : "moved"
+                    } → NOT saved`
+                );
                 return;
             }
         }
         setWarning(null);
-        const rotatedOnly =
-            queued.every(m => m.angleChanged) &&
-            changed.every(m => {
-                const p = basePos(m.item);
-                return round(m.x) === p.x && round(m.y) === p.y;
-            });
         setLastEvent(
-            rotatedOnly
+            onlyIcon
+                ? queued.length === 1
+                    ? `Icon changed to ${queued[0].shape} → saving`
+                    : `${queued.length} markers changed to ${queued[0].shape} → saving one by one`
+                : onlyRotation
                 ? queued.length === 1
                     ? `Rotated to ${queued[0].angle}° → saving`
                     : `${queued.length} markers rotated → saving one by one`
@@ -681,6 +759,15 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                 : `${queued.length} markers moved → saving one by one`
         );
         const now = nowMs();
+        setShapeOverride(prev => {
+            const next = { ...prev };
+            queued.forEach(m => {
+                if (m.shapeChanged) {
+                    next[m.item.id] = { s: m.shape, t: now };
+                }
+            });
+            return next;
+        });
         setAngleOverride(prev => {
             const next = { ...prev };
             queued.forEach(m => {
@@ -803,6 +890,28 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         );
     };
     const rotateBy = Math.max(1, rotateStep || 90);
+
+    // Change the icon of markers (edit mode); saved like a move.
+    const changeIcon = (group: ObjectItem[], name: string): void => {
+        if (group.length === 0 || name === "") {
+            return;
+        }
+        commitMoves(
+            group.map(i => {
+                const p = basePos(i);
+                return { item: i, x: p.x, y: p.y, shape: name };
+            })
+        );
+    };
+    const iconLabel = (n: string): string => {
+        const s = n.replace(/-/g, " ");
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    };
+    const iconList: string[] = (iconChoices || "")
+        .split(",")
+        .map(s => normShape(s))
+        .filter(s => s !== "");
+    const iconNames = Array.from(new Set(iconList.length > 0 ? iconList : SHAPE_NAMES));
 
     const nudgeStep = (): number => snapSize || (coordMode === "percent" && !integerCoords ? 0.5 : 1);
 
@@ -1194,6 +1303,30 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             <Icon kind="rotR" />
                         </button>
                     </span>
+                    {(() => {
+                        const shapes = selectedItems.map(i => normShape(currentShape(i)));
+                        const common = shapes.length > 0 && shapes.every(s => s === shapes[0]) ? shapes[0] : "";
+                        const names = common && !iconNames.includes(common) ? [...iconNames, common] : iconNames;
+                        return (
+                            <select
+                                className="layout-overlay__select layout-overlay__icon-select"
+                                aria-label="Icon"
+                                title="Change the icon of the selected markers"
+                                disabled={selectedItems.length === 0}
+                                value={common}
+                                onChange={e => changeIcon(selectedItems, e.target.value)}
+                            >
+                                <option value="" disabled>
+                                    {selectedItems.length === 0 || common ? "Icon…" : "Icon (mixed)"}
+                                </option>
+                                {names.map(n => (
+                                    <option key={n} value={n}>
+                                        {iconLabel(n)}
+                                    </option>
+                                ))}
+                            </select>
+                        );
+                    })()}
                     <span className="layout-overlay__group" role="group" aria-label="Align selected markers">
                         {alignBtn("left", "Align left edges (same X)")}
                         {alignBtn("centerX", "Align horizontal centers (same X)")}
@@ -1278,12 +1411,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         const exprSize = num(sizeExpr?.get(item).value);
                         const size =
                             (attrSize > 0 ? attrSize : exprSize > 0 ? exprSize : defaultSize || 28) * markerScale;
-                        const shapeDef = parseShape(
-                            shapeAttr?.get(item).value ||
-                                shapeExpr?.get(item).value ||
-                                SHAPE_FROM_ENUM[defaultShape] ||
-                                defaultShape
-                        );
+                        const shapeDef = parseShape(currentShape(item));
                         // Occupancy wins over Fill: occupied = solid line, not occupied = dotted line.
                         const occupancy = occupancyAttr ? parseOccupancy(occupancyAttr.get(item).value) : undefined;
                         const filled =
@@ -1519,23 +1647,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                     )}
                 </div>
             </div>
-            {hover && hoverItem && (
+            {showCard && hover && (
                 <div
                     className={`layout-overlay__card ${hover.below ? "layout-overlay__card--below" : ""}`}
                     style={{ left: hover.left, top: hover.top }}
                     role="tooltip"
                 >
-                    {hoverTitle?.get(hoverItem).value && (
-                        <div className="layout-overlay__card-title">{hoverTitle.get(hoverItem).value}</div>
-                    )}
-                    {hoverLines.map((l, i) => {
-                        const text = l.text.get(hoverItem).value;
-                        return text ? (
-                            <div key={i} className={l.bold ? "layout-overlay__card-bold" : undefined}>
-                                {text}
-                            </div>
-                        ) : null;
-                    })}
+                    {cardTitle && <div className="layout-overlay__card-title">{cardTitle}</div>}
+                    {cardLines.map((l, i) => (
+                        <div key={i} className={l.bold ? "layout-overlay__card-bold" : undefined}>
+                            {l.text}
+                        </div>
+                    ))}
                 </div>
             )}
             {editing && single && (
@@ -1565,23 +1688,22 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             </label>
                         );
                     })}
-                    {shapeAttr && (
-                        <label>
-                            Shape{" "}
-                            <select
-                                value={shapeAttr.get(single).value ?? ""}
-                                disabled={shapeAttr.get(single).readOnly}
-                                onChange={e => setAttr(shapeAttr, single, e.target.value)}
-                            >
-                                <option value="">circle</option>
-                                {SHAPE_NAMES.map(n => (
-                                    <option key={n} value={n}>
-                                        {n}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
+                    <label>
+                        Icon{" "}
+                        <select
+                            value={normShape(currentShape(single))}
+                            onChange={e => changeIcon([single], e.target.value)}
+                        >
+                            {(iconNames.includes(normShape(currentShape(single)))
+                                ? iconNames
+                                : [...iconNames, normShape(currentShape(single))]
+                            ).map(n => (
+                                <option key={n} value={n}>
+                                    {iconLabel(n)}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                     {colorAttr && (
                         <label>
                             Color{" "}
