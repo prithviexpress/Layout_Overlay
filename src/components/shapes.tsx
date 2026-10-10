@@ -132,7 +132,7 @@ export function Shape({
     const transform = [rotation ? `rotate(${rotation}deg)` : "", mirror ? "scaleX(-1)" : ""].filter(Boolean).join(" ");
     const style = { width, height, transform: transform || undefined };
     // Solid outline of a filled icon: a darker shade of its own color.
-    const edgeStyle = { stroke: `color-mix(in srgb, ${color} 55%, black)` } as React.CSSProperties;
+    const edgeStyle = { stroke: "#111" } as React.CSSProperties;
 
     if (shape.kind === "image") {
         return (
@@ -253,8 +253,8 @@ export function Shape({
                                 className="layout-overlay__outline"
                                 fill="none"
                                 style={edgeStyle}
-                                stroke="#222"
-                                strokeWidth={lineWidth}
+                                stroke="#111"
+                                strokeWidth={Math.max(2, lineWidth)}
                                 strokeLinejoin="round"
                                 strokeLinecap="round"
                             >
@@ -296,8 +296,8 @@ export function Shape({
                             d={d}
                             fill={color}
                             style={edgeStyle}
-                            stroke="#222"
-                            strokeWidth={lineWidth}
+                            stroke="#111"
+                            strokeWidth={Math.max(2, lineWidth)}
                             strokeLinejoin="round"
                         />
                     </g>

@@ -74,7 +74,7 @@ export const positiveNum = (v: Big | undefined | null, fallback = 1): number => 
     return Number.isFinite(n) && n > 0 ? n : fallback;
 };
 
-/** true / false when the value clearly says occupied / not occupied, undefined when empty or unknown. */
+/** true / false when the value clearly says occupied / not occupied, undefined when empty; other text counts as occupied. */
 export function parseOccupancy(v: string | Big | boolean | undefined | null): boolean | undefined {
     if (typeof v === "boolean") {
         return v;
@@ -86,5 +86,6 @@ export function parseOccupancy(v: string | Big | boolean | undefined | null): bo
     if (EMPTY.test(t)) {
         return false;
     }
-    return undefined;
+    // Any other text (e.g. a truck number or plate) means something is there.
+    return t === "" ? undefined : true;
 }
