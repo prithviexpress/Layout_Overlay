@@ -211,7 +211,7 @@
 
             <property key="canvasFromImage" type="boolean" defaultValue="false">
                 <caption>Canvas size from image</caption>
-                <description>On: the canvas takes the layout image's own pixel size, so the image is never stretched and, in Pixels mode, X/Y are in the image's own pixels. Handy when each PSL has a different layout image. Off: Canvas width / height below are used.</description>
+                <description>On: the canvas takes the layout image's own pixel size, so the image is never stretched and, in Pixels mode, X/Y are in the image's own pixels. Always on when Layouts are configured (each layout keeps its own picture proportions). Otherwise: off = Canvas width / height below are used.</description>
             </property>
 
             <property key="canvasWidth" type="integer" defaultValue="1000">
@@ -460,6 +460,35 @@
 
         </propertyGroup>
 
+        <propertyGroup caption="Layouts">
+
+            <property key="layouts" type="datasource" isList="true" required="false">
+                <caption>Layouts (e.g. PSL)</caption>
+                <description>One object per layout, e.g. the PSL records (one per shop). The drop-down then lists these layouts, with no "All" choice; the selected layout decides the background picture, the title and which markers are shown.</description>
+            </property>
+
+            <property key="layoutKeyAttr" type="attribute" dataSource="layouts" required="false">
+                <caption>Layout name (e.g. Shop)</caption>
+                <description>Text shown in the drop-down for each layout, e.g. the PSL's Shop. Markers whose Group attribute (Filter tab) equals this value belong to that layout.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
+            <property key="layoutTitleExpr" type="expression" dataSource="layouts" required="false">
+                <caption>Layout title (expression)</caption>
+                <description>Title shown for the selected layout, e.g. 'Truck Bay Status : ' + $currentObject/Location + ' | ' + $currentObject/Plant. Overrides the Title settings.</description>
+                <returnType type="String" />
+            </property>
+
+            <property key="layoutContent" type="widgets" dataSource="layouts" required="false">
+                <caption>Layout picture</caption>
+                <description>Drop an Image widget here and point it at the layout's own picture (the PSL image, dynamic image). Only the selected layout's picture is drawn, as the plan background. Set the Image widget's width and height to 100%.</description>
+            </property>
+
+        </propertyGroup>
+
         <propertyGroup caption="Filter">
 
             <property key="groupAttr" type="attribute" dataSource="markers" required="false">
@@ -478,6 +507,11 @@
                     <attributeType name="String" />
                     <attributeType name="Enum" />
                 </attributeTypes>
+            </property>
+
+            <property key="showAllGroups" type="boolean" defaultValue="true">
+                <caption>Offer "All" option</caption>
+                <description>Off: the drop-down has no "All" choice and the first group is selected at start, so exactly one group is always shown. (With Layouts configured there is never an "All" option.)</description>
             </property>
 
             <property key="showSearch" type="boolean" defaultValue="true">

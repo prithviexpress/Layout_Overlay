@@ -5,16 +5,15 @@ Draw clickable, draggable, editable **shape markers** at X/Y coordinates over a 
 ## Data model
 A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes: `Shape`, `Color`, `Size`, `Rotation`, `Label`, `Tooltip`.
 
-## Layout from the PSL entity (one layout image per PSL)
-`PSL` is a specialization of `System.Image`, so each PSL object can hold its own layout picture, and `Bay` belongs to a PSL through `Bay_PSL`. To show the PSL's layout with its bays:
-1. **Page:** put a **Data view** for `PSL` (the selected PSL) and the widget inside it. If you also use the Moved X/Y fallback, nest a second data view (`Layout_Temp_Coords`) inside it, so both objects are in context.
-2. **Markers:** data source *Database*, entity `Bay`, XPath `[MyFirstModule.Bay_PSL = $currentObject]` (use the PSL data view as the object). X / Y are each PSL's own layout coordinates.
-3. **Background image:** choose *Dynamic image* and pick the PSL object (it is an Image). Each PSL then shows its own picture.
-4. **Canvas → Canvas size from image: on** keeps the image's proportions (never stretched) and, in Pixels mode, makes X/Y the image's own pixels. Off = Canvas width / height are used.
-5. **Title (expression):** e.g. `$PSL/Location + ' | ' + $PSL/Plant`.
-6. **Group attribute:** `Bay.Shop` for the shop drop-down.
-7. **Security:** give the user roles read access to `PSL` (including its image contents).
-Upload the layout once per PSL on an admin page with an image uploader bound to the PSL.
+## Layouts: one picture per shop (PSL), switched by the drop-down
+`PSL` (Location, Plant, Shop, Unloading_Location) is an Image entity, so each PSL record can hold its own layout picture. Configure **Layouts** and the drop-down becomes the layout switcher: exactly one shop is shown at a time (**no "All groups"**), and choosing a shop automatically switches the picture, the title and the bays.
+1. **Layouts** data source: entity `PSL` (all PSLs the user may see, e.g. one plant). **Layout name** = `PSL.Shop`.
+2. **Layout picture**: drop an Image widget into this slot, set it to *Dynamic image* from the PSL list item (the current object), width and height 100%.
+3. **Layout title (expression)**: e.g. `'Truck Bay Status : ' + $currentObject/Location + ' | ' + $currentObject/Plant`.
+4. **Markers** data source: entity `Bay` (all bays, or the bays of the plant); **Filter -> Group attribute** = `Bay.Shop`. Bays whose Shop equals the selected PSL's Shop are shown; the others are not drawn.
+5. Each picture keeps its own proportions (never stretched); in Pixels mode X / Y are that picture's own pixels, in Percent mode 0-100.
+6. **Security:** read access to `PSL` (including its image contents) for the user roles. Upload one picture per PSL on an admin page.
+Without Layouts, **Filter** works as a plain group filter; turn **Offer "All" option** off to always show exactly one group.
 
 ## Shape and size sources
 Both are resolved per marker in this order, so you can type a value, drive it from data, or compute it:
@@ -61,7 +60,7 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 
 ## Hover card and legend
 - **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
-- **Title:** shown in the same toolbar as Edit / zoom / legend (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
+- **Toolbar:** one tidy row: shop drop-down and search on the left, the title in the middle, zoom (- / % / +, fit width, fit page as icons) and Edit on the right; the legend is a slim line below; align tools appear below only while editing. **Title:** from the selected layout, else the sources below (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
 - **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
 ## Filter: group drop-down and search

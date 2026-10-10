@@ -11,10 +11,11 @@ import {
     ListAttributeValue,
     ListExpressionValue,
     ListValue,
+    ListWidgetValue,
     WebImage
 } from "mendix";
+import { ComponentType, CSSProperties, ReactNode } from "react";
 import { Big } from "big.js";
-import { CSSProperties } from "react";
 
 export type CoordModeEnum = "percent" | "pixels";
 
@@ -142,8 +143,13 @@ export interface LayoutOverlayContainerProps {
     newYAttr?: EditableValue<Big>;
     movedXAttr?: EditableValue<Big>;
     movedYAttr?: EditableValue<Big>;
+    layouts?: ListValue;
+    layoutKeyAttr?: ListAttributeValue<string>;
+    layoutTitleExpr?: ListExpressionValue<string>;
+    layoutContent?: ListWidgetValue;
     groupAttr?: ListAttributeValue<string>;
     searchAttr?: ListAttributeValue<string>;
+    showAllGroups: boolean;
     showSearch: boolean;
     searchPlaceholder: string;
     allGroupsLabel: string;
@@ -232,8 +238,13 @@ export interface LayoutOverlayPreviewProps {
     newYAttr: string;
     movedXAttr: string;
     movedYAttr: string;
+    layouts: {} | { caption: string } | { type: string } | null;
+    layoutKeyAttr: string;
+    layoutTitleExpr: string;
+    layoutContent: { widgetCount: number; renderer: ComponentType<{ children: ReactNode; caption?: string }> };
     groupAttr: string;
     searchAttr: string;
+    showAllGroups: boolean;
     showSearch: boolean;
     searchPlaceholder: string;
     allGroupsLabel: string;

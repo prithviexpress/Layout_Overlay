@@ -95,6 +95,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         canEditExpr,
         labelFontFamily,
         groupAttr,
+        layouts,
+        layoutKeyAttr,
+        layoutTitleExpr,
+        layoutContent,
+        showAllGroups,
         searchAttr,
         showSearch,
         searchPlaceholder,
@@ -148,6 +153,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [warning, setWarning] = useState<string | null>(null);
     const [lastEvent, setLastEvent] = useState<string | null>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
+    const bgRef = useRef<HTMLDivElement>(null);
     const zMin = Math.max(10, minZoom) / 100;
     const zMax = Math.max(zMin, maxZoom / 100);
     const [zoom, setZoomState] = useState(() => Math.min(zMax, Math.max(zMin, (initialZoom || 100) / 100)));
@@ -215,8 +221,6 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     }, [zoom]);
 
     // The viewport only exists once the data source has loaded, so re-attach when that changes.
-    // Title sources, in order: expression, text template, plain text (none depends on the user's language except the template).
-    const titleValue = (titleExpr?.value || titleText?.value || titleLabel || "").trim();
     const wheelZoom = zoomWheel === "wheel";
     const loading = markers.status === "loading" && (markers.items ?? []).length === 0;
 
@@ -269,11 +273,37 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     const editing = canEdit && editMode;
     const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
-    // Optionally take the canvas size from the layout image itself (e.g. the image of the PSL in the page
-    // context), so the image is never stretched and pixel coordinates refer to the image's own pixels.
+    const items = markers.items ?? [];
+
+    // Layouts (e.g. one PSL per shop): the drop-down switches between them, with no "All" choice.
+    const norm = (s: string | undefined | null): string => (s ?? "").toString().toLowerCase().trim();
+    const byName = (a: string, b2: string): number =>
+        a.localeCompare(b2, undefined, { numeric: true, sensitivity: "base" });
+    const layoutMode = !!layouts;
+    const layoutItems = layouts?.items ?? [];
+    const layoutName = (i: ObjectItem): string => (layoutKeyAttr?.get(i).value ?? "").trim();
+    const options: Array<{ value: string; label: string }> = layoutMode
+        ? layoutItems
+              .map(i => ({ value: i.id, label: layoutName(i) || "(layout)" }))
+              .sort((a, b2) => byName(a.label, b2.label))
+        : Array.from(new Set(items.map(i => groupAttr?.get(i).value ?? "").filter(g => g !== "")))
+              .sort(byName)
+              .map(g => ({ value: g, label: g }));
+    const allowAll = !layoutMode && showAllGroups;
+    const selectedValue = options.some(o => o.value === group) ? group : allowAll ? "" : options[0]?.value ?? "";
+    const activeLayout = layoutMode ? layoutItems.find(i => i.id === selectedValue) : undefined;
+    const activeGroup = layoutMode ? (activeLayout ? layoutName(activeLayout) : "") : selectedValue;
+    const layoutNode = activeLayout && layoutContent ? layoutContent.get(activeLayout) : undefined;
+    const hasLayoutNode = layoutNode !== undefined;
+    const layoutKey = `layout:${selectedValue}`;
+    // With several layouts, each picture keeps its own proportions (it is never stretched to a shared canvas).
+    const fromImage = canvasFromImage || layoutMode;
+
+    // Optionally take the canvas size from the layout picture itself, so it is never stretched and
+    // pixel coordinates refer to the picture's own pixels.
     const [imgDims, setImgDims] = useState<{ url: string; w: number; h: number } | null>(null);
     useEffect(() => {
-        if (!canvasFromImage || !bgUrl) {
+        if (!fromImage || !bgUrl || hasLayoutNode) {
             return undefined;
         }
         let alive = true;
@@ -287,34 +317,70 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         return () => {
             alive = false;
         };
-    }, [bgUrl, canvasFromImage]);
-    const imgSize = canvasFromImage && imgDims && imgDims.url === bgUrl ? imgDims : null;
+    }, [bgUrl, fromImage, hasLayoutNode]);
+    // Layout picture rendered by a child widget: read the size of the <img> it draws.
+    useEffect(() => {
+        const root = bgRef.current;
+        if (!fromImage || !hasLayoutNode || !root) {
+            return undefined;
+        }
+        let frame = 0;
+        const probe = (): void => {
+            const img = root.querySelector("img");
+            if (!img) {
+                return;
+            }
+            const done = (): void => {
+                if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                    setImgDims({ url: layoutKey, w: img.naturalWidth, h: img.naturalHeight });
+                }
+            };
+            if (img.complete) {
+                done();
+            } else {
+                img.addEventListener("load", done, { once: true });
+            }
+        };
+        frame = requestAnimationFrame(probe);
+        const mo = new MutationObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(probe);
+        });
+        mo.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
+        return () => {
+            cancelAnimationFrame(frame);
+            mo.disconnect();
+        };
+    }, [fromImage, hasLayoutNode, layoutKey]);
+    const dimsKey = hasLayoutNode ? layoutKey : bgUrl;
+    const imgSize = fromImage && imgDims && imgDims.url === dimsKey ? imgDims : null;
     const w = Math.max(1, imgSize?.w ?? canvasWidth);
     const h = Math.max(1, imgSize?.h ?? canvasHeight);
     const maxX = coordMode === "percent" ? 100 : w;
     const maxY = coordMode === "percent" ? 100 : h;
 
-    const items = markers.items ?? [];
+    // Title: the selected layout's title first, then expression, text template, plain text.
+    const layoutTitle = activeLayout ? layoutTitleExpr?.get(activeLayout).value : undefined;
+    const titleValue = (layoutTitle || titleExpr?.value || titleText?.value || titleLabel || "").trim();
+
     const hoverItem = drag?.moved || !hover ? undefined : items.find(i => i.id === hover.id);
-    // Filter: group drop-down + search box. A marker is shown when it is in the chosen group AND
-    // its label, group or extra search attribute contains the typed text.
-    const norm = (s: string | undefined | null): string => (s ?? "").toString().toLowerCase().trim();
-    const groupOptions = Array.from(new Set(items.map(i => groupAttr?.get(i).value ?? "").filter(g => g !== ""))).sort(
-        (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
-    const activeGroup = groupOptions.includes(group) ? group : "";
+    // A marker is shown when it is in the chosen group/layout AND its label, group or extra search
+    // attribute contains the typed text.
     const q = norm(query);
+    const groupMatches = (item: ObjectItem): boolean =>
+        !activeGroup || norm(groupAttr?.get(item).value) === norm(activeGroup);
     const matches = (item: ObjectItem): boolean => {
-        const g = groupAttr?.get(item).value ?? "";
-        if (activeGroup && g !== activeGroup) {
+        if (!groupMatches(item)) {
             return false;
         }
         if (!q) {
             return true;
         }
-        return [labelAttr?.get(item).value, g, searchAttr?.get(item).value].some(h => norm(h).includes(q));
+        const g = groupAttr?.get(item).value ?? "";
+        return [labelAttr?.get(item).value, g, searchAttr?.get(item).value].some(h2 => norm(h2).includes(q));
     };
-    const filterActive = !!activeGroup || q !== "";
+    const filterActive = q !== "" || (!layoutMode && !!activeGroup);
+    const scopeCount = items.filter(groupMatches).length;
     const visibleCount = items.filter(matches).length;
     const selectedItems = items.filter(i => selectedIds.includes(i.id) && matches(i));
     const single = selectedItems.length === 1 ? selectedItems[0] : undefined;
@@ -786,146 +852,149 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {(canEdit || allowZoom || !!groupAttr || showSearch || !!titleValue || legendItems.length > 0) && (
+            {(canEdit || allowZoom || layoutMode || !!groupAttr || showSearch || !!titleValue) && (
                 <div className={`layout-overlay__toolbar layout-overlay__toolbar--title-${titleAlign}`}>
-                    {titleValue && <span className="layout-overlay__title">{titleValue}</span>}
-                    {canEdit && (
-                        <button
-                            type="button"
-                            className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
-                            onClick={() => {
-                                setEditMode(m => !m);
-                                setSelectedIds([]);
-                            }}
-                        >
-                            {editMode ? "Editing" : "Edit"}
-                        </button>
-                    )}
-                    {allowZoom && (
-                        <span className="layout-overlay__group">
-                            <button
-                                type="button"
-                                className="layout-overlay__icon-btn"
-                                title="Zoom out"
-                                onClick={() => zoomTo(zoomRef.current / 1.25)}
+                    <div className="layout-overlay__tb-left">
+                        {(layoutMode || groupAttr) && (
+                            <select
+                                className="layout-overlay__select"
+                                aria-label="Shop"
+                                value={selectedValue}
+                                onChange={e => setGroup(e.target.value)}
                             >
-                                −
-                            </button>
-                            <span className="layout-overlay__zoom-label">{Math.round(zoom * 100)}%</span>
-                            <button
-                                type="button"
-                                className="layout-overlay__icon-btn"
-                                title="Zoom in"
-                                onClick={() => zoomTo(zoomRef.current * 1.25)}
-                            >
-                                +
-                            </button>
-                            <button
-                                type="button"
-                                className="layout-overlay__btn layout-overlay__btn--flat"
-                                title="Fit width: the plan fills the widget width (scroll vertically if taller)"
-                                onClick={fitWidth}
-                            >
-                                Fit width
-                            </button>
-                            <button
-                                type="button"
-                                className="layout-overlay__btn layout-overlay__btn--flat"
-                                title="Fit page: the whole plan is visible at once, no scrolling"
-                                onClick={fitPage}
-                            >
-                                Fit page
-                            </button>
-                        </span>
-                    )}
-                    {(groupAttr || showSearch) && (
-                        <span className="layout-overlay__filter">
-                            {groupAttr && (
-                                <select
-                                    className="layout-overlay__select"
-                                    aria-label="Group"
-                                    value={activeGroup}
-                                    onChange={e => setGroup(e.target.value)}
+                                {allowAll && <option value="">{allGroupsLabel || "All groups"}</option>}
+                                {options.map(o => (
+                                    <option key={o.value} value={o.value}>
+                                        {o.label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {showSearch && (
+                            <span className="layout-overlay__search">
+                                <input
+                                    type="text"
+                                    className="layout-overlay__search-input"
+                                    aria-label="Search"
+                                    placeholder={searchPlaceholder}
+                                    value={query}
+                                    onChange={e => setQuery(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === "Escape") {
+                                            setQuery("");
+                                        }
+                                    }}
+                                />
+                                {query && (
+                                    <button
+                                        type="button"
+                                        className="layout-overlay__search-clear"
+                                        aria-label="Clear search"
+                                        onClick={() => setQuery("")}
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </span>
+                        )}
+                        {filterActive && (
+                            <span className="layout-overlay__count">
+                                {visibleCount} / {scopeCount}
+                            </span>
+                        )}
+                    </div>
+                    {titleValue && <div className="layout-overlay__title">{titleValue}</div>}
+                    <div className="layout-overlay__tb-right">
+                        {allowZoom && (
+                            <span className="layout-overlay__group">
+                                <button
+                                    type="button"
+                                    className="layout-overlay__icon-btn"
+                                    title="Zoom out"
+                                    aria-label="Zoom out"
+                                    onClick={() => zoomTo(zoomRef.current / 1.25)}
                                 >
-                                    <option value="">{allGroupsLabel || "All groups"}</option>
-                                    {groupOptions.map(g => (
-                                        <option key={g} value={g}>
-                                            {g}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            {showSearch && (
-                                <span className="layout-overlay__search">
-                                    <input
-                                        type="text"
-                                        className="layout-overlay__search-input"
-                                        aria-label="Search"
-                                        placeholder={searchPlaceholder}
-                                        value={query}
-                                        onChange={e => setQuery(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === "Escape") {
-                                                setQuery("");
-                                            }
-                                        }}
-                                    />
-                                    {query && (
-                                        <button
-                                            type="button"
-                                            className="layout-overlay__search-clear"
-                                            aria-label="Clear search"
-                                            onClick={() => setQuery("")}
-                                        >
-                                            ×
-                                        </button>
-                                    )}
-                                </span>
-                            )}
-                            {filterActive && (
-                                <span className="layout-overlay__count">
-                                    {visibleCount} / {items.length}
-                                </span>
-                            )}
+                                    −
+                                </button>
+                                <span className="layout-overlay__zoom-label">{Math.round(zoom * 100)}%</span>
+                                <button
+                                    type="button"
+                                    className="layout-overlay__icon-btn"
+                                    title="Zoom in"
+                                    aria-label="Zoom in"
+                                    onClick={() => zoomTo(zoomRef.current * 1.25)}
+                                >
+                                    +
+                                </button>
+                                <span className="layout-overlay__sep" />
+                                <button
+                                    type="button"
+                                    className="layout-overlay__icon-btn"
+                                    title="Fit width: the plan fills the widget width (scroll vertically if taller)"
+                                    aria-label="Fit width"
+                                    onClick={fitWidth}
+                                >
+                                    <Icon kind="fitW" />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="layout-overlay__icon-btn"
+                                    title="Fit page: the whole plan is visible at once, no scrolling"
+                                    aria-label="Fit page"
+                                    onClick={fitPage}
+                                >
+                                    <Icon kind="fitP" />
+                                </button>
+                            </span>
+                        )}
+                        {canEdit && (
+                            <button
+                                type="button"
+                                className={`layout-overlay__btn ${editMode ? "layout-overlay__btn--on" : ""}`}
+                                onClick={() => {
+                                    setEditMode(m => !m);
+                                    setSelectedIds([]);
+                                }}
+                            >
+                                {editMode ? "Editing" : "Edit"}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+            {legendItems.length > 0 && (
+                <div className="layout-overlay__legend">
+                    {legendItems.slice(0, 6).map((l, i) => (
+                        <span key={i} className="layout-overlay__legend-item">
+                            <Shape
+                                shape={parseShape(l.legendShape)}
+                                color={l.legendColor}
+                                size={l.legendShape.toLowerCase().startsWith("truck") ? 34 : 13}
+                                rotation={0}
+                                filled={l.legendFilled}
+                                dotted={l.legendDotted}
+                                lineWidth={Math.max(1.5, Math.min(outlineWidth, 2.5))}
+                                outlineTint={outlineFill / 100}
+                            />
+                            {l.legendCaption}
                         </span>
-                    )}
-                    {editing && (
-                        <span className="layout-overlay__group" role="group" aria-label="Align selected markers">
-                            {alignBtn("left", "Align left edges (same X)")}
-                            {alignBtn("centerX", "Align horizontal centers (same X)")}
-                            {alignBtn("right", "Align right edges (same X)")}
-                            <span className="layout-overlay__sep" />
-                            {alignBtn("top", "Align tops (same Y, in a row)")}
-                            {alignBtn("middle", "Align vertical middles (same Y, in a row)")}
-                            {alignBtn("bottom", "Align bottoms (same Y, in a row)")}
-                            <span className="layout-overlay__sep" />
-                            {alignBtn("distH", "Distribute horizontally", 3)}
-                            {alignBtn("distV", "Distribute vertically", 3)}
-                        </span>
-                    )}
-                    {legendItems.length > 0 && (
-                        <div className="layout-overlay__legend">
-                            {legendItems.slice(0, 6).map((l, i) => (
-                                <span key={i} className="layout-overlay__legend-item">
-                                    <Shape
-                                        shape={parseShape(l.legendShape)}
-                                        color={l.legendColor}
-                                        size={l.legendShape.toLowerCase().startsWith("truck") ? 40 : 14}
-                                        rotation={0}
-                                        filled={l.legendFilled}
-                                        dotted={l.legendDotted}
-                                        lineWidth={Math.max(1.5, Math.min(outlineWidth, 2.5))}
-                                        outlineTint={outlineFill / 100}
-                                    />
-                                    {l.legendCaption}
-                                </span>
-                            ))}
-                        </div>
-                    )}
+                    ))}
                 </div>
             )}
             {editing && (
                 <div className="layout-overlay__status">
+                    <span className="layout-overlay__group" role="group" aria-label="Align selected markers">
+                        {alignBtn("left", "Align left edges (same X)")}
+                        {alignBtn("centerX", "Align horizontal centers (same X)")}
+                        {alignBtn("right", "Align right edges (same X)")}
+                        <span className="layout-overlay__sep" />
+                        {alignBtn("top", "Align tops (same Y, in a row)")}
+                        {alignBtn("middle", "Align vertical middles (same Y, in a row)")}
+                        {alignBtn("bottom", "Align bottoms (same Y, in a row)")}
+                        <span className="layout-overlay__sep" />
+                        {alignBtn("distH", "Distribute horizontally", 3)}
+                        {alignBtn("distV", "Distribute vertically", 3)}
+                    </span>
                     <span className="layout-overlay__hint">
                         {selectedItems.length > 0
                             ? `${selectedItems.length} selected`
@@ -954,13 +1023,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         width: `${zoom * 100}%`,
                         marginInline: "auto",
                         aspectRatio: `${w} / ${h}`,
-                        backgroundImage: bgUrl ? `url("${bgUrl}")` : undefined
+                        backgroundImage: bgUrl && !hasLayoutNode ? `url("${bgUrl}")` : undefined
                     }}
                     onPointerDown={onCanvasPointerDown}
                     onPointerMove={onCanvasPointerMove}
                     onPointerUp={onCanvasPointerUp}
                     onPointerCancel={onCanvasPointerUp}
                 >
+                    {hasLayoutNode && (
+                        <div ref={bgRef} className="layout-overlay__bgcontent">
+                            {layoutNode}
+                        </div>
+                    )}
                     {showGrid && (
                         <div
                             className="layout-overlay__grid"

@@ -72,18 +72,6 @@
 .layout-overlay__last { font-weight: 600; color: var(--lo-accent); }
 
 /* ── Legend ──────────────────────────────────────────────── */
-/* Legend and title live in the toolbar */
-.layout-overlay__legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 6px; order: 5; margin-left: auto; font-size: 12px; }
-.layout-overlay__legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 9px 2px 7px;
-    background: var(--lo-surface);
-    border: 1px solid var(--lo-border);
-    border-radius: 999px;
-    white-space: nowrap;
-}
 
 /* ── Warning ─────────────────────────────────────────────── */
 .layout-overlay__warning {
@@ -260,17 +248,12 @@
     .layout-overlay__pulse { animation: none; opacity: 0.5; }
     .layout-overlay__shape-wrap, .layout-overlay__card { transition: none; animation: none; }
 }
-.layout-overlay__title { font-family: var(--lo-label-font, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif); margin: 0 8px 0 4px; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.25; color: var(--lo-text); }
-.layout-overlay__toolbar--title-center .layout-overlay__title { order: 4; flex: 1 1 auto; text-align: center; margin: 0 8px; }
-.layout-overlay__toolbar--title-center .layout-overlay__legend { margin-left: 0; }
-.layout-overlay__toolbar--title-right .layout-overlay__title { order: 6; margin: 0 4px 0 12px; }
-.layout-overlay__status { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -2px 2px 8px; font-size: 12px; }
+.layout-overlay__toolbar--title-center .layout-overlay__toolbar--title-right .layout-overlay__status { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -2px 2px 8px; font-size: 12px; }
 .layout-overlay__legend-item .layout-overlay__shape { flex: none; }
 .layout-overlay__label-anchor { position: absolute; width: 0; height: 0; pointer-events: none; }
 .layout-overlay__label--rear { white-space: nowrap; }
 
 /* ── Filter: group drop-down + search ───────────────────── */
-.layout-overlay__filter { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .layout-overlay__select,
 .layout-overlay__search-input {
     height: 28px;
@@ -303,3 +286,48 @@
 .layout-overlay__search-clear:hover { background: var(--lo-accent-soft); color: var(--lo-accent); }
 .layout-overlay__count { color: var(--lo-muted); font-variant-numeric: tabular-nums; }
 .layout-overlay__marker--dim { opacity: 0.16; pointer-events: none; filter: grayscale(1); }
+
+/* ── Toolbar: [shop + search] [title] [zoom + edit], legend row, edit tools row ── */
+.layout-overlay__toolbar { flex-wrap: nowrap; gap: 12px; }
+.layout-overlay__tb-left,
+.layout-overlay__tb-right { display: flex; align-items: center; gap: 8px; flex: none; }
+.layout-overlay__tb-right { margin-left: auto; }
+.layout-overlay__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+    font-family: var(--lo-label-font, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    color: var(--lo-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.layout-overlay__toolbar--title-left .layout-overlay__title { order: -1; flex: none; text-align: left; margin-right: 4px; }
+.layout-overlay__toolbar--title-left .layout-overlay__tb-left { margin-right: auto; }
+.layout-overlay__toolbar--title-right .layout-overlay__title { order: 3; flex: none; text-align: right; }
+.layout-overlay__toolbar--title-right .layout-overlay__tb-right { margin-left: auto; }
+.layout-overlay__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 18px;
+    margin: -2px 4px 8px;
+    padding: 0 2px;
+    font-size: 12px;
+    color: var(--lo-muted);
+}
+.layout-overlay__legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.layout-overlay__status { align-items: center; }
+.layout-overlay__bgcontent { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.layout-overlay__bgcontent > *,
+.layout-overlay__bgcontent .mx-image,
+.layout-overlay__bgcontent .mx-image-viewer { width: 100% !important; height: 100% !important; }
+.layout-overlay__bgcontent img { display: block; width: 100% !important; height: 100% !important; max-width: none; object-fit: fill; }
+@media (max-width: 760px) {
+    .layout-overlay__toolbar { flex-wrap: wrap; }
+    .layout-overlay__title { order: -1; flex: 1 1 100%; }
+}

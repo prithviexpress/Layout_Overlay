@@ -8,7 +8,9 @@ const PATHS: Record<string, string> = {
     middle: "M1.5 8h13 M4 3.5v9 M9 5v6",
     bottom: "M1.5 14h13 M4 3v8 M9 6v5",
     distH: "M2 2v12 M14 2v12 M6.5 5h3v6h-3z",
-    distV: "M2 2h12 M2 14h12 M5 6.5v3h6v-3z"
+    distV: "M2 2h12 M2 14h12 M5 6.5v3h6v-3z",
+    fitW: "M1.5 3v10 M14.5 3v10 M4.5 8h7 M6.5 5.5L4 8l2.5 2.5 M9.5 5.5L12 8l-2.5 2.5",
+    fitP: "M2 5.5V2h3.5 M14 5.5V2h-3.5 M2 10.5V14h3.5 M14 10.5V14h-3.5 M5.5 5.5h5v5h-5z"
 };
 
 export type IconKind = keyof typeof PATHS;
