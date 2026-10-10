@@ -624,7 +624,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             }
             if (queued.some(m => m.angleChanged) && !movedAngleAttr && !movedDirectionAttr) {
                 problems.push(
-                    "Moved angle / Moved direction are not configured (Editing tab), so a rotation cannot be saved"
+                    "Moved angle (output) and/or Moved direction (output) are not set on the Editing tab. Point them at attributes of the page's temp object and copy them onto the Bay in the On marker moved / changed microflow"
                 );
             } else if (
                 queued.some(m => m.angleChanged) &&
@@ -642,8 +642,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             if (problems.length > 0) {
                 // eslint-disable-next-line no-console
                 console.warn("[LayoutOverlay] move not saved:", problems);
-                setWarning(`X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`);
-                setLastEvent(`${queued.length} marker(s) moved → NOT saved`);
+                const onlyRotation = queued.every(m => {
+                    const p = basePos(m.item);
+                    return m.angleChanged && round(m.x) === p.x && round(m.y) === p.y;
+                });
+                setWarning(
+                    onlyRotation
+                        ? `The rotation cannot be saved: ${problems.join("; ")}.`
+                        : `X/Y are read-only and the fallback is not usable: ${problems.join("; ")}.`
+                );
+                setLastEvent(`${queued.length} marker(s) ${onlyRotation ? "rotated" : "moved"} → NOT saved`);
                 return;
             }
         }
