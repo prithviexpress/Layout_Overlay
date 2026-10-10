@@ -49,6 +49,8 @@ export type LabelSideEnum = "rear" | "cabin";
 
 export type LabelWidthEnum = "match" | "readable" | "auto";
 
+export type FilterModeEnum = "hide" | "dim";
+
 export interface HoverLinesType {
     text: ListExpressionValue<string>;
     bold: boolean;
@@ -139,6 +141,12 @@ export interface LayoutOverlayContainerProps {
     newYAttr?: EditableValue<Big>;
     movedXAttr?: EditableValue<Big>;
     movedYAttr?: EditableValue<Big>;
+    groupAttr?: ListAttributeValue<string>;
+    searchAttr?: ListAttributeValue<string>;
+    showSearch: boolean;
+    searchPlaceholder: string;
+    allGroupsLabel: string;
+    filterMode: FilterModeEnum;
     onMarkerClick?: ListActionValue;
     onMarkerDoubleClick?: ListActionValue;
     onMarkerContextMenu?: ListActionValue;
@@ -222,6 +230,12 @@ export interface LayoutOverlayPreviewProps {
     newYAttr: string;
     movedXAttr: string;
     movedYAttr: string;
+    groupAttr: string;
+    searchAttr: string;
+    showSearch: boolean;
+    searchPlaceholder: string;
+    allGroupsLabel: string;
+    filterMode: FilterModeEnum;
     onMarkerClick: {} | null;
     onMarkerDoubleClick: {} | null;
     onMarkerContextMenu: {} | null;

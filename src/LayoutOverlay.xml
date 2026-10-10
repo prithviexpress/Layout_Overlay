@@ -455,6 +455,52 @@
 
         </propertyGroup>
 
+        <propertyGroup caption="Filter">
+
+            <property key="groupAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Group attribute (e.g. Shop)</caption>
+                <description>When set, a drop-down appears in the toolbar listing every distinct value of this attribute (plus "All groups"), and selecting one shows only that group's markers.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
+            <property key="searchAttr" type="attribute" dataSource="markers" required="false">
+                <caption>Extra search attribute</caption>
+                <description>Optional additional attribute the search box looks in. The search always matches the marker's Label and the Group attribute.</description>
+                <attributeTypes>
+                    <attributeType name="String" />
+                    <attributeType name="Enum" />
+                </attributeTypes>
+            </property>
+
+            <property key="showSearch" type="boolean" defaultValue="true">
+                <caption>Show search box</caption>
+                <description>A box in the toolbar: type to show only markers whose label, group (e.g. shop) or extra search attribute contains the text.</description>
+            </property>
+
+            <property key="searchPlaceholder" type="string" defaultValue="Search bay...">
+                <caption>Search placeholder</caption>
+                <description>Hint text shown in the empty search box.</description>
+            </property>
+
+            <property key="allGroupsLabel" type="string" defaultValue="All groups">
+                <caption>"All" option text</caption>
+                <description>Text of the first drop-down option that clears the group filter.</description>
+            </property>
+
+            <property key="filterMode" type="enumeration" defaultValue="hide">
+                <caption>Non-matching markers</caption>
+                <description>Hide: markers that do not match are removed from the plan. Dim: they stay but are faded and not clickable, so you keep the context.</description>
+                <enumerationValues>
+                    <enumerationValue key="hide">Hide</enumerationValue>
+                    <enumerationValue key="dim">Dim</enumerationValue>
+                </enumerationValues>
+            </property>
+
+        </propertyGroup>
+
         <propertyGroup caption="Events">
 
             <property key="onMarkerClick" type="action" dataSource="markers" required="false">

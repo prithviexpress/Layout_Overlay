@@ -53,6 +53,13 @@ Drag writes X/Y into the marker's attributes, which requires **write access** on
 - **Title:** shown in the same toolbar as Edit / zoom / legend (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
 - **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
 
+## Filter: group drop-down and search
+- **Group attribute** (e.g. `Shop`): adds a drop-down to the toolbar with *All groups* plus every distinct value (sorted naturally). Pick one to show only that group's markers.
+- **Search box** (placeholder *Search bay...*): type to keep only markers whose label (e.g. `Bay_ID`), group (shop) or optional *Extra search attribute* contains the text; case-insensitive, Esc or × clears.
+- Group and search combine (both must match). A `3 / 21` counter shows how many markers match.
+- **Non-matching markers:** *Hide* removes them from the plan; *Dim* fades them and makes them unclickable. Markers keep their positions either way.
+- In edit mode, select-all, box-select and align only touch the visible (matching) markers.
+
 ## Selection and hover
 - A selected (clicked) marker gets a blue glow that follows the icon's own outline and rotation; there is no box or ring around it.
 - Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.

@@ -268,3 +268,38 @@
 .layout-overlay__legend-item .layout-overlay__shape { flex: none; }
 .layout-overlay__label-anchor { position: absolute; width: 0; height: 0; pointer-events: none; }
 .layout-overlay__label--rear { white-space: nowrap; }
+
+/* ── Filter: group drop-down + search ───────────────────── */
+.layout-overlay__filter { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.layout-overlay__select,
+.layout-overlay__search-input {
+    height: 28px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border: 1px solid var(--lo-border);
+    border-radius: 7px;
+    background: var(--lo-surface);
+    color: var(--lo-text);
+    font: inherit;
+}
+.layout-overlay__select { min-width: 120px; padding-right: 4px; cursor: pointer; }
+.layout-overlay__search { position: relative; display: inline-flex; align-items: center; }
+.layout-overlay__search-input { width: 180px; padding-right: 26px; }
+.layout-overlay__select:focus-visible,
+.layout-overlay__search-input:focus-visible { outline: 2px solid var(--lo-accent); outline-offset: 1px; }
+.layout-overlay__search-clear {
+    position: absolute;
+    right: 3px;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--lo-muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+.layout-overlay__search-clear:hover { background: var(--lo-accent-soft); color: var(--lo-accent); }
+.layout-overlay__count { color: var(--lo-muted); font-variant-numeric: tabular-nums; }
+.layout-overlay__marker--dim { opacity: 0.16; pointer-events: none; filter: grayscale(1); }

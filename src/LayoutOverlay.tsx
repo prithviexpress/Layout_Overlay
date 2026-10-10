@@ -93,6 +93,12 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         allowEditing,
         canEditExpr,
         labelFontFamily,
+        groupAttr,
+        searchAttr,
+        showSearch,
+        searchPlaceholder,
+        allGroupsLabel,
+        filterMode,
         labelRadius,
         startInEditMode,
         newXAttr,
@@ -136,6 +142,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const [, setTick] = useState(0);
     const queueRef = useRef<QueuedMove[]>([]);
     const inFlightRef = useRef<{ item: ObjectItem; seen: boolean; t: number } | null>(null);
+    const [group, setGroup] = useState("");
+    const [query, setQuery] = useState("");
     const [warning, setWarning] = useState<string | null>(null);
     const [lastEvent, setLastEvent] = useState<string | null>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -268,7 +276,27 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     const items = markers.items ?? [];
     const hoverItem = drag?.moved || !hover ? undefined : items.find(i => i.id === hover.id);
-    const selectedItems = items.filter(i => selectedIds.includes(i.id));
+    // Filter: group drop-down + search box. A marker is shown when it is in the chosen group AND
+    // its label, group or extra search attribute contains the typed text.
+    const norm = (s: string | undefined | null): string => (s ?? "").toString().toLowerCase().trim();
+    const groupOptions = Array.from(new Set(items.map(i => groupAttr?.get(i).value ?? "").filter(g => g !== ""))).sort(
+        (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+    );
+    const activeGroup = groupOptions.includes(group) ? group : "";
+    const q = norm(query);
+    const matches = (item: ObjectItem): boolean => {
+        const g = groupAttr?.get(item).value ?? "";
+        if (activeGroup && g !== activeGroup) {
+            return false;
+        }
+        if (!q) {
+            return true;
+        }
+        return [labelAttr?.get(item).value, g, searchAttr?.get(item).value].some(h => norm(h).includes(q));
+    };
+    const filterActive = !!activeGroup || q !== "";
+    const visibleCount = items.filter(matches).length;
+    const selectedItems = items.filter(i => selectedIds.includes(i.id) && matches(i));
     const single = selectedItems.length === 1 ? selectedItems[0] : undefined;
 
     const clamp = (v: number, max: number): number => Math.min(max, Math.max(0, v));
@@ -527,7 +555,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         }
         if (editing && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
             e.preventDefault();
-            setSelectedIds(items.map(i => i.id));
+            setSelectedIds(items.filter(matches).map(i => i.id));
             return;
         }
         const step = (e.shiftKey ? 10 : 1) * nudgeStep();
@@ -587,7 +615,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             const hit = items
                 .filter(i => {
                     const p = displayPos(i);
-                    return p.x >= xa && p.x <= xb && p.y >= ya && p.y <= yb;
+                    return matches(i) && p.x >= xa && p.x <= xb && p.y >= ya && p.y <= yb;
                 })
                 .map(i => i.id);
             setSelectedIds(prev => (m.additive ? Array.from(new Set([...prev, ...hit])) : hit));
@@ -738,7 +766,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
 
     return (
         <div ref={rootRef} className={`layout-overlay ${props.class}`} style={props.style}>
-            {(canEdit || allowZoom || !!titleValue || legendItems.length > 0) && (
+            {(canEdit || allowZoom || !!groupAttr || showSearch || !!titleValue || legendItems.length > 0) && (
                 <div className={`layout-overlay__toolbar layout-overlay__toolbar--title-${titleAlign}`}>
                     {titleValue && <span className="layout-overlay__title">{titleValue}</span>}
                     {canEdit && (
@@ -788,6 +816,57 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             >
                                 Fit page
                             </button>
+                        </span>
+                    )}
+                    {(groupAttr || showSearch) && (
+                        <span className="layout-overlay__filter">
+                            {groupAttr && (
+                                <select
+                                    className="layout-overlay__select"
+                                    aria-label="Group"
+                                    value={activeGroup}
+                                    onChange={e => setGroup(e.target.value)}
+                                >
+                                    <option value="">{allGroupsLabel || "All groups"}</option>
+                                    {groupOptions.map(g => (
+                                        <option key={g} value={g}>
+                                            {g}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            {showSearch && (
+                                <span className="layout-overlay__search">
+                                    <input
+                                        type="text"
+                                        className="layout-overlay__search-input"
+                                        aria-label="Search"
+                                        placeholder={searchPlaceholder}
+                                        value={query}
+                                        onChange={e => setQuery(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === "Escape") {
+                                                setQuery("");
+                                            }
+                                        }}
+                                    />
+                                    {query && (
+                                        <button
+                                            type="button"
+                                            className="layout-overlay__search-clear"
+                                            aria-label="Clear search"
+                                            onClick={() => setQuery("")}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </span>
+                            )}
+                            {filterActive && (
+                                <span className="layout-overlay__count">
+                                    {visibleCount} / {items.length}
+                                </span>
+                            )}
                         </span>
                     )}
                     {editing && (
@@ -873,6 +952,10 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                         />
                     )}
                     {items.map(item => {
+                        const isMatch = matches(item);
+                        if (!isMatch && filterMode !== "dim") {
+                            return null;
+                        }
                         const isDrag = !!drag?.moved && drag.ids.includes(item.id);
                         const { x, y } = displayPos(item);
                         // Precedence: attribute, then expression, then the value typed in Studio Pro.
@@ -1023,7 +1106,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             "layout-overlay__marker",
                             editing ? "layout-overlay__marker--edit" : "",
                             isDrag ? "layout-overlay__marker--drag" : "",
-                            selectedIds.includes(item.id) ? "layout-overlay__marker--selected" : ""
+                            selectedIds.includes(item.id) ? "layout-overlay__marker--selected" : "",
+                            isMatch ? "" : "layout-overlay__marker--dim"
                         ].join(" ");
                         return (
                             <div
