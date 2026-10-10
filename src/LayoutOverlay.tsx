@@ -52,6 +52,27 @@ const SHAPE_FROM_ENUM: Record<string, string> = { thumbsUp: "thumbs-up", thumbsD
 const num = (v: Big | undefined | null, fallback = 0): number => (v ? Number(v.toString()) : fallback);
 const DRAG_THRESHOLD_PX = 3;
 const nowMs = (): number => Date.now();
+const LOAD_STAMP = nowMs();
+
+/**
+ * URL of the picture of an Image object (an entity that is, or specialises, System.Image), served by the
+ * Mendix runtime: mx.data.getDocumentUrl when the client offers it, otherwise the standard /file?guid= URL.
+ */
+function objectImageUrl(guid: string, version?: Date | undefined): string {
+    const stamp = version instanceof Date ? version.getTime() : LOAD_STAMP;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mxGlobal = (window as any).mx;
+    try {
+        const viaClient = mxGlobal?.data?.getDocumentUrl?.(guid, stamp, false);
+        if (typeof viaClient === "string" && viaClient !== "") {
+            return viaClient;
+        }
+    } catch {
+        // fall through to the plain URL
+    }
+    const base: string = typeof mxGlobal?.appUrl === "string" ? mxGlobal.appUrl : "/";
+    return `${base}file?guid=${guid}&changedDate=${stamp}`;
+}
 
 export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement {
     const {
@@ -103,6 +124,8 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         layoutKeyAttr,
         layoutTitleExpr,
         layoutLabelExpr,
+        layoutImageFromObject,
+        layoutVersionAttr,
         markerLayoutRef,
         titleSize,
         layoutContent,
@@ -283,7 +306,7 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     };
 
     const editing = canEdit && editMode;
-    const bgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
+    const configuredBgUrl = backgroundUrl?.value || backgroundImage?.value?.uri;
     const items = markers.items ?? [];
 
     // Layouts (e.g. one PSL per shop): the drop-down switches between them, with no "All" choice.
@@ -313,6 +336,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     // With several layouts, each picture keeps its own proportions (it is never stretched to a shared canvas).
     const fromImage = canvasFromImage || layoutMode;
 
+    // Layout picture, in order of precedence: a child widget in the Layout picture slot; the layout object's own
+    // picture (the Layouts entity is an Image entity such as PSL) fetched from the Mendix server; the Background image.
+    const [failedUrls, setFailedUrls] = useState<Record<string, true>>({});
+    const autoLayoutUrl =
+        layoutMode && layoutImageFromObject && activeLayout && !hasLayoutNode
+            ? objectImageUrl(activeLayout.id, layoutVersionAttr?.get(activeLayout).value)
+            : undefined;
+    const autoFailed = !!autoLayoutUrl && failedUrls[autoLayoutUrl] === true;
+    const bgUrl = autoLayoutUrl && !autoFailed ? autoLayoutUrl : configuredBgUrl;
+
     // Optionally take the canvas size from the layout picture itself, so it is never stretched and
     // pixel coordinates refer to the picture's own pixels.
     const [imgDims, setImgDims] = useState<{ url: string; w: number; h: number } | null>(null);
@@ -325,6 +358,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         img.onload = () => {
             if (alive && img.naturalWidth > 0 && img.naturalHeight > 0) {
                 setImgDims({ url: bgUrl, w: img.naturalWidth, h: img.naturalHeight });
+            }
+        };
+        img.onerror = () => {
+            if (alive) {
+                setFailedUrls(prev => ({ ...prev, [bgUrl]: true }));
             }
         };
         img.src = bgUrl;
@@ -1162,6 +1200,16 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
             {warning && (
                 <div className="layout-overlay__warning" role="alert">
                     {warning}
+                </div>
+            )}
+            {autoFailed && (
+                <div className="layout-overlay__warning" role="alert">
+                    {`The picture of layout ${
+                        options.find(o => o.value === selectedValue)?.label ?? ""
+                    } could not be loaded. ` +
+                        "Check that the Layouts entity is an Image entity (a specialization of System.Image) with a picture " +
+                        "uploaded, and that the user's role can read it." +
+                        (configuredBgUrl ? " Showing the Background image instead." : "")}
                 </div>
             )}
             <div

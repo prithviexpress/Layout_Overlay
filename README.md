@@ -6,69 +6,14 @@ Draw clickable, draggable, editable **shape markers** at X/Y coordinates over a 
 A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes: `Shape`, `Color`, `Size`, `Rotation`, `Label`, `Tooltip`.
 
 ## Layouts: one picture per shop (PSL), switched by the drop-down
-`PSL` (Location, Plant, Shop, Unloading_Location) is an Image entity, so each PSL record can hold its own layout picture. Configure **Layouts** and the drop-down becomes the layout switcher: exactly one shop is shown at a time (**no "All groups"**), and choosing a shop automatically switches the picture, the title and the bays.
-1. **Layouts** data source: entity `PSL` (all PSLs the user may see). **Layout name** = e.g. `PSL.Location`; optional **Drop-down text (expression)** = e.g. `$currentObject/Location + ' | ' + $currentObject/Plant`.
-2. **Layout picture**: drop an Image widget into this slot, set it to *Dynamic image* from the PSL list item (the current object), width and height 100%.
-3. **Layout title (expression)**: e.g. `'[ ' + $currentObject/Location + ' | ' + $currentObject/Plant + ' ]'`; **Title size (px)** (default 22).
-4. **Markers** data source: entity `Bay` (all bays). Set **Marker -> layout association** to `Bay_PSL`: the selected PSL then shows exactly the bays linked to it, whatever their Shop / Location text is. (Without the association, bays are matched by comparing **Filter -> Group attribute** with the layout name.) Widgets receive objects reached through an association only as ids, so the bays themselves (X, Y, label ...) still come from the Bay list.
-5. Each picture keeps its own proportions (never stretched); in Pixels mode X / Y are that picture's own pixels, in Percent mode 0-100.
-6. **Security:** read access to `PSL` (including its image contents) for the user roles. Upload one picture per PSL on an admin page.
+`PSL` (Location, Plant, Shop, Unloading_Location) is an Image entity, so each PSL record holds its own layout picture. Configure **Layouts** and the drop-down becomes the layout switcher: exactly one layout is shown at a time (**no "All groups"**), and choosing one automatically switches the picture, the title and the bays.
+1. **Layouts** data source: entity `PSL`. **Layout name** = e.g. `PSL.Location`; optional **Drop-down text (expression)**.
+2. **Picture: nothing to place.** With *Use the layout's own picture* on (default) the widget loads the selected PSL's picture itself from the server (it is served at the object's file URL, via `mx.data.getDocumentUrl` when the client offers it, otherwise `/file?guid=<id>`). Needs: the entity is a specialization of System.Image, a picture is uploaded, and the user's role can read it. If it cannot be loaded the widget says so and shows the Canvas *Background image* instead. Optional **Picture version (date)** reloads the picture when it is replaced during a session.
+3. *(Optional override)* **Layout picture** slot: an Image widget placed there takes precedence over the automatic picture.
+4. **Layout title (expression)**, **Title size (px)** (default 22).
+5. **Markers** data source: entity `Bay` (all bays). **Marker -> layout association** = `Bay_PSL`: the selected PSL shows exactly the bays linked to it. (Without it, bays are matched by comparing **Filter -> Group attribute** with the layout name.) Widgets receive objects reached through an association only as ids, so X, Y and the label still come from the Bay list.
+6. Each picture keeps its own proportions (never stretched); in Pixels mode X / Y are that picture's own pixels, in Percent mode 0-100.
 Without Layouts, **Filter** works as a plain group filter; turn **Offer "All" option** off to always show exactly one group.
-
-## Shape and size sources
-Both are resolved per marker in this order, so you can type a value, drive it from data, or compute it:
-- **Shape:** *Shape attribute* → *Shape (expression)* → *Default shape* (a dropdown in the widget settings: truck, circle, square, triangle, diamond, star, hexagon, pin, cross, check, warning, thumbs up / down).
-- **Size (px):** *Size attribute* → *Size (expression)* → *Default marker size* (typed manually). Expressions can use page variables and the marker's attributes. Zero, negative or empty values fall through to the next source.
-
-## Shapes
-`Shape` attribute value:
-- built-in name: `truck circle square triangle diamond star hexagon pin cross check warning thumbs-up thumbs-down`
-- custom vector: `svg:<path d>` (drawn in a 24x24 viewBox)
-- custom image: `url:<image url>`
-
-### Truck icon, fill, scale and orientation
-- **`truck`** is a minimal top view of a tractor and trailer: two separate rounded shapes with a gap, a slim windshield, no wheels, heading right at 0°. Filled = solid, empty = outline. It is about 3:1 long, so its nominal width is 1.6 x the marker Size.
-- **Occupancy** (any shape): Boolean `true`, or text `occupied / busy / yes / in use` → **solid line** in the marker's Color; `false`, or `available / empty / free / no` → **dotted line**. *Occupied style* switches occupied between a solid line (default) and a solid filled shape. When set, Occupancy wins over Fill; empty or unknown values fall back to Fill.
-- **Fill** (any shape): Boolean `true`, or text `occupied / filled / yes / busy` → filled; `false`, or `available / empty / outline / no / free` → empty outline. *Default fill* applies when the value is missing. Color comes from the **Color** attribute.
-- **Orientation:** degrees (0 = right/east, 90 = down/south, clockwise) or a name `N NE E SE S SW W NW` (also `up down left right`). **Angle offset** adds fine angles on top (e.g. 12.5).
-- **Mirror** flips the icon left-right (mainly useful for custom side-view icons; for a top-view truck just use the orientation).
-- **Scale** (uniform), **Scale X** and **Scale Y** (stretch) multiply the marker size. Legend entries can be filled, outline or dotted too.
-- **Label orientation:** *Behind the truck rear* (default): for trucks the label sits directly behind the rear of the truck, on its axis, running away from it (never beside it, never towards the cab) and turned to stay readable; other shapes keep the label below. *Always upright* keeps it horizontal below the icon.
-- **Label font** defaults to a clean system font (Segoe UI on Windows) with tabular digits; set *Label font* to override (installed or theme-loaded fonts only). Vertical labels use the browser's native vertical text and whole-pixel positions so they stay sharp.
-- **Label corner radius (px)** (default 3): 0 = square corners; a very large value gives the old pill shape.
-- **Label font size (px)** (default 12) is independent of how thin the icon is; the bubble is as thick as the truck but never thinner than the text needs. **Truck label text:** *Along the truck* (default, compact) or *Always horizontal* (easiest to read; the bubble can be wider than the truck and touches the truck's end).
-- **Outline tint (%)** (default 14) fills the inside of empty / not-occupied icons with a pale tint of their color so they stay visible over a busy drawing.
-- **Truck label side:** *Rear* (default) puts the label behind the container; *Cabin* puts it in front of the cab. Either way it is on the truck's axis, never beside it.
-- **Truck label width:** *Exactly the truck's width* (default): the bubble is precisely as thick as the truck body and the text shrinks to fit (up to 90% of the thickness; use Size or Scale Y to make the truck thicker for larger text). *Truck's width, at least text height*: as thick as the truck but never thinner than the text needs. *Fit to text*: sized to its text.
-- **Outline thickness (px):** line width of empty / not-occupied icons in screen pixels (default 2), constant regardless of scale or zoom. Dotted lines use dots of that width.
-
-## Events (Mendix actions)
-*Marker click, double click and right click run only while **Edit is off** (while editing a click just selects). Turn on **Fire click events while editing** to change that. **On marker moved / changed** only runs after a move or change made in edit mode.*
-
-| Property | When |
-|---|---|
-| On marker click | click / Enter on a marker (receives that marker object) |
-| On marker double click | double click |
-| On marker right click | context menu |
-| On marker moved / changed | after X/Y (or inspector fields) were written to the object |
-| On canvas click | edit mode, empty-space click; Clicked X/Y attributes are set first (use to create a marker) |
-
-Dragging writes X/Y straight into the marker's attributes (they must be editable), then fires *On marker moved / changed* — commit the object there.
-
-## If dragging doesn't save
-Drag writes X/Y into the marker's attributes, which requires **write access** on those attributes (entity access rules; not calculated). If they are read-only the widget shows a warning. Fallback: set **Moved X / Moved Y (output)** to attributes on the page's context object. After a drag the widget writes the new coordinates there and fires *On marker moved / changed* (marker as context) — a microflow can then update the marker.
-
-## Hover card and legend
-- **Hover card → Title / Lines:** a title plus any number of lines, each a Mendix text template evaluated per marker (`Avg: {1} min  Util: {2}%`). Empty lines are hidden. Optional bold per line and a hover delay.
-- **Toolbar:** one tidy row: shop drop-down and search on the left, the title in the middle, zoom (- / % / +, fit width, fit page as icons) and Edit on the right; the legend is a slim line below; align tools appear below only while editing. **Title:** from the selected layout, else the sources below (left, center or right of the bar). Three sources, first non-empty wins: *Title (expression)*, *Title (text template)*, *Title (plain text)*. Text templates are stored per language and only show for the language they were typed in, so if a title does not appear, use the plain text or expression.
-- **Legend → Legend items:** up to **6** entries, each with its own caption, color and shape (Studio Pro flags more than 6).
-
-## Filter: group drop-down and search
-- **Group attribute** (e.g. `Shop`): adds a drop-down to the toolbar with *All groups* plus every distinct value (sorted naturally). Pick one to show only that group's markers.
-- **Search box** (placeholder *Search bay...*): type to keep only markers whose label (e.g. `Bay_ID`), group (shop) or optional *Extra search attribute* contains the text; case-insensitive, Esc or × clears.
-- Group and search combine (both must match). A `3 / 21` counter shows how many markers match.
-- **Non-matching markers:** *Hide* removes them from the plan; *Dim* fades them and makes them unclickable. Markers keep their positions either way.
-- In edit mode, select-all, box-select and align only touch the visible (matching) markers.
 
 ## Rotating markers (edit mode)
 Select one or more markers and use the **Rotate** buttons (or **R** = clockwise, **Shift+R** = counter-clockwise); *Rotate step* sets the angle per click (default 90). The new orientation shows immediately and is saved like a move:
@@ -76,10 +21,10 @@ Select one or more markers and use the **Rotate** buttons (or **R** = clockwise,
 - Otherwise (e.g. a text `BayDirection`, or read-only attributes) set **Editing -> Moved angle (output)** (degrees, 0 = east, clockwise) and/or **Moved direction (output)** (text: E, SE, S, SW, W, NW, N, NE). The widget then calls *On marker moved / changed* with **X, Y, angle and direction all set**, so a microflow that copies them onto the Bay can never write a stale position or orientation.
 
 ## Layout picture: which source wins
-With **Layouts** configured, the selected layout's **Layout picture** is drawn and the Canvas tab's **Background image** is ignored. The Background image is used only when no Layouts are configured, or when the selected layout has no Layout picture slot configured.
+With **Layouts** configured the picture is chosen in this order: a widget in the *Layout picture* slot, then the selected layout's own picture loaded from the server, then the Canvas tab's **Background image** (also used when no Layouts are configured).
 
 ## Selection and hover
-- A selected (clicked) marker gets a black outline with a white halo that follows the icon's own shape and rotation; no colour, no box or ring around it. Label bubbles are white with black text and a thin black border.
+- A selected (clicked) marker gets a black outline with a white halo that follows the icon's own shape and rotation; no colour, no box or ring around it. Label bubbles are black with white text.
 - Hover shows **one** thing: the hover card when *Hover card* is configured, otherwise the optional *Tooltip* attribute. The label is never repeated as a browser tooltip while it is visible.
 
 ## Zoom and scroll

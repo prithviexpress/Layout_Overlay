@@ -175,8 +175,8 @@
     text-rendering: optimizeLegibility;
     line-height: 1.25;
     white-space: nowrap;
-    color: #000;
-    background: var(--lo-label-bg, #fff);
+    color: #fff;
+    background: var(--lo-label-bg, #000);
     border: 1px solid var(--lo-label-border, #000);
     border-radius: 3px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1);

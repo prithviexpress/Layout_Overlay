@@ -191,7 +191,7 @@
 
             <property key="backgroundImage" type="image" required="false">
                 <caption>Background image</caption>
-                <description>Single layout picture (static, or a dynamic image from the page context). Used only when no Layouts are configured, or when the selected layout has no Layout picture; with Layouts, the Layout picture of the selected layout is the one drawn and this is ignored.</description>
+                <description>Single layout picture (static, or a dynamic image from the page context). Used only when no Layouts are configured, or when the selected layout's own picture cannot be loaded; with Layouts, the selected layout's picture is drawn and this is ignored.</description>
             </property>
 
             <property key="backgroundUrl" type="expression" required="false">
@@ -520,9 +520,22 @@
                 </associationTypes>
             </property>
 
+            <property key="layoutImageFromObject" type="boolean" defaultValue="true">
+                <caption>Use the layout's own picture</caption>
+                <description>On (default): when the Layouts entity is an Image entity (a specialization of System.Image, like PSL), the widget loads the selected layout's picture itself from the server, based on the drop-down choice, so no Image widget is needed. A Layout picture widget (below), if you place one, takes precedence. Turn off if your Layouts entity has no picture.</description>
+            </property>
+
+            <property key="layoutVersionAttr" type="attribute" dataSource="layouts" required="false">
+                <caption>Picture version (date)</caption>
+                <description>Optional DateTime attribute (for example a last-changed date) so the picture reloads when it is replaced during a session. Empty: the picture is cached until the page is reloaded.</description>
+                <attributeTypes>
+                    <attributeType name="DateTime" />
+                </attributeTypes>
+            </property>
+
             <property key="layoutContent" type="widgets" dataSource="layouts" required="false">
                 <caption>Layout picture</caption>
-                <description>Drop an Image widget here and point it at the layout's own picture (the PSL image, dynamic image). Only the selected layout's picture is drawn, as the plan background; it takes precedence over the Background image on the Canvas tab. Set the Image widget's width and height to 100%.</description>
+                <description>Optional override: drop an Image widget here and point it at the layout's own picture (dynamic image). Normally not needed, because the widget loads the layout object's own picture itself. Only the selected layout's picture is drawn, as the plan background; it takes precedence over the Background image on the Canvas tab. Set the Image widget's width and height to 100%.</description>
             </property>
 
         </propertyGroup>

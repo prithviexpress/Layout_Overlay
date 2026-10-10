@@ -153,6 +153,8 @@ export interface LayoutOverlayContainerProps {
     layoutLabelExpr?: ListExpressionValue<string>;
     layoutTitleExpr?: ListExpressionValue<string>;
     markerLayoutRef?: ListReferenceValue | ListReferenceSetValue;
+    layoutImageFromObject: boolean;
+    layoutVersionAttr?: ListAttributeValue<Date>;
     layoutContent?: ListWidgetValue;
     groupAttr?: ListAttributeValue<string>;
     searchAttr?: ListAttributeValue<string>;
@@ -254,6 +256,8 @@ export interface LayoutOverlayPreviewProps {
     layoutLabelExpr: string;
     layoutTitleExpr: string;
     markerLayoutRef: string;
+    layoutImageFromObject: boolean;
+    layoutVersionAttr: string;
     layoutContent: { widgetCount: number; renderer: ComponentType<{ children: ReactNode; caption?: string }> };
     groupAttr: string;
     searchAttr: string;
