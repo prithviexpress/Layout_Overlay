@@ -98,6 +98,9 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
         layouts,
         layoutKeyAttr,
         layoutTitleExpr,
+        layoutLabelExpr,
+        markerLayoutRef,
+        titleSize,
         layoutContent,
         showAllGroups,
         searchAttr,
@@ -284,7 +287,10 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     const layoutName = (i: ObjectItem): string => (layoutKeyAttr?.get(i).value ?? "").trim();
     const options: Array<{ value: string; label: string }> = layoutMode
         ? layoutItems
-              .map(i => ({ value: i.id, label: layoutName(i) || "(layout)" }))
+              .map(i => ({
+                  value: i.id,
+                  label: (layoutLabelExpr?.get(i).value || layoutName(i) || "").trim() || "(layout)"
+              }))
               .sort((a, b2) => byName(a.label, b2.label))
         : Array.from(new Set(items.map(i => groupAttr?.get(i).value ?? "").filter(g => g !== "")))
               .sort(byName)
@@ -367,8 +373,18 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
     // A marker is shown when it is in the chosen group/layout AND its label, group or extra search
     // attribute contains the typed text.
     const q = norm(query);
-    const groupMatches = (item: ObjectItem): boolean =>
-        !activeGroup || norm(groupAttr?.get(item).value) === norm(activeGroup);
+    // In Layouts mode a marker belongs to the selected layout through the association (e.g. Bay_PSL) when
+    // configured, otherwise by comparing its Group value with the layout name.
+    const groupMatches = (item: ObjectItem): boolean => {
+        if (layoutMode && markerLayoutRef) {
+            const ref = markerLayoutRef.get(item).value;
+            if (!ref || !activeLayout) {
+                return false;
+            }
+            return (Array.isArray(ref) ? ref : [ref]).some(o => o.id === activeLayout.id);
+        }
+        return !activeGroup || norm(groupAttr?.get(item).value) === norm(activeGroup);
+    };
     const matches = (item: ObjectItem): boolean => {
         if (!groupMatches(item)) {
             return false;
@@ -903,7 +919,11 @@ export function LayoutOverlay(props: LayoutOverlayContainerProps): ReactElement 
                             </span>
                         )}
                     </div>
-                    {titleValue && <div className="layout-overlay__title">{titleValue}</div>}
+                    {titleValue && (
+                        <div className="layout-overlay__title" style={{ fontSize: titleSize || 22 }} title={titleValue}>
+                            {titleValue}
+                        </div>
+                    )}
                     <div className="layout-overlay__tb-right">
                         {allowZoom && (
                             <span className="layout-overlay__group">

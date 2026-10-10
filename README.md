@@ -7,10 +7,10 @@ A marker entity with at least `X` and `Y` (Decimal/Integer). Optional attributes
 
 ## Layouts: one picture per shop (PSL), switched by the drop-down
 `PSL` (Location, Plant, Shop, Unloading_Location) is an Image entity, so each PSL record can hold its own layout picture. Configure **Layouts** and the drop-down becomes the layout switcher: exactly one shop is shown at a time (**no "All groups"**), and choosing a shop automatically switches the picture, the title and the bays.
-1. **Layouts** data source: entity `PSL` (all PSLs the user may see, e.g. one plant). **Layout name** = `PSL.Shop`.
+1. **Layouts** data source: entity `PSL` (all PSLs the user may see). **Layout name** = e.g. `PSL.Location`; optional **Drop-down text (expression)** = e.g. `$currentObject/Location + ' | ' + $currentObject/Plant`.
 2. **Layout picture**: drop an Image widget into this slot, set it to *Dynamic image* from the PSL list item (the current object), width and height 100%.
-3. **Layout title (expression)**: e.g. `'Truck Bay Status : ' + $currentObject/Location + ' | ' + $currentObject/Plant`.
-4. **Markers** data source: entity `Bay` (all bays, or the bays of the plant); **Filter -> Group attribute** = `Bay.Shop`. Bays whose Shop equals the selected PSL's Shop are shown; the others are not drawn.
+3. **Layout title (expression)**: e.g. `'[ ' + $currentObject/Location + ' | ' + $currentObject/Plant + ' ]'`; **Title size (px)** (default 22).
+4. **Markers** data source: entity `Bay` (all bays). Set **Marker -> layout association** to `Bay_PSL`: the selected PSL then shows exactly the bays linked to it, whatever their Shop / Location text is. (Without the association, bays are matched by comparing **Filter -> Group attribute** with the layout name.) Widgets receive objects reached through an association only as ids, so the bays themselves (X, Y, label ...) still come from the Bay list.
 5. Each picture keeps its own proportions (never stretched); in Pixels mode X / Y are that picture's own pixels, in Percent mode 0-100.
 6. **Security:** read access to `PSL` (including its image contents) for the user roles. Upload one picture per PSL on an admin page.
 Without Layouts, **Filter** works as a plain group filter; turn **Offer "All" option** off to always show exactly one group.

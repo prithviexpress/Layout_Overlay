@@ -10,6 +10,8 @@ import {
     ListActionValue,
     ListAttributeValue,
     ListExpressionValue,
+    ListReferenceSetValue,
+    ListReferenceValue,
     ListValue,
     ListWidgetValue,
     WebImage
@@ -145,7 +147,9 @@ export interface LayoutOverlayContainerProps {
     movedYAttr?: EditableValue<Big>;
     layouts?: ListValue;
     layoutKeyAttr?: ListAttributeValue<string>;
+    layoutLabelExpr?: ListExpressionValue<string>;
     layoutTitleExpr?: ListExpressionValue<string>;
+    markerLayoutRef?: ListReferenceValue | ListReferenceSetValue;
     layoutContent?: ListWidgetValue;
     groupAttr?: ListAttributeValue<string>;
     searchAttr?: ListAttributeValue<string>;
@@ -165,6 +169,7 @@ export interface LayoutOverlayContainerProps {
     titleLabel: string;
     titleExpr?: DynamicValue<string>;
     titleText?: DynamicValue<string>;
+    titleSize: number;
     titleAlign: TitleAlignEnum;
     legendItems: LegendItemsType[];
 }
@@ -240,7 +245,9 @@ export interface LayoutOverlayPreviewProps {
     movedYAttr: string;
     layouts: {} | { caption: string } | { type: string } | null;
     layoutKeyAttr: string;
+    layoutLabelExpr: string;
     layoutTitleExpr: string;
+    markerLayoutRef: string;
     layoutContent: { widgetCount: number; renderer: ComponentType<{ children: ReactNode; caption?: string }> };
     groupAttr: string;
     searchAttr: string;
@@ -260,6 +267,7 @@ export interface LayoutOverlayPreviewProps {
     titleLabel: string;
     titleExpr: string;
     titleText: string;
+    titleSize: number | null;
     titleAlign: TitleAlignEnum;
     legendItems: LegendItemsPreviewType[];
 }
